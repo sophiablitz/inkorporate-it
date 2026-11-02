@@ -82,7 +82,8 @@ Open the `front-end` folder in Android Studio, not the top-level folder.
 
 | Requirement | Who or what checks it |
 | --- | --- |
-| 2 approvals, including 1 from a team lead | Reviewers on GitHub |
+| 2 approvals, including 1 from a team lead | **Review count** check and reviewers on GitHub |
+| If you're a team lead: 1 approval from another lead | **Review count** check and reviewers on GitHub |
 | `scripts/test.sh` passes | **Test script** check |
 | Android commits have `[emulator-tested]` | **Emulator flag** check |
 
