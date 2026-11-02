@@ -1,0 +1,6 @@
+# Team leads. Approval from any one person on a line counts as the lead review.
+# When several lines match a file, the last one wins.
+
+*           @sophiablitz @mrsaladbar @ismaelrosier15
+/front-end/ @sophiablitz @mrsaladbar @ismaelrosier15
+/back-end/  @sophiablitz @ismaelrosier15

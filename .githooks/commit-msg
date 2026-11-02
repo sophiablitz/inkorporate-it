@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Git passes the path of the commit message file as $1.
+
+exec "$(git rev-parse --show-toplevel)/scripts/check-emulator-flag.sh" --message-file "$1"

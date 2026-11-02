@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Runs the tests for whichever parts of the project this branch changed, so
+# back-end developers don't need the Android SDK to push.
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+changed="$(git diff --name-only origin/main...HEAD)"
+
+if echo "$changed" | grep -q '^front-end/'; then
+  "$repo_root/scripts/test.sh" front-end
+fi
+if echo "$changed" | grep -q '^back-end/'; then
+  "$repo_root/scripts/test.sh" back-end
+fi
