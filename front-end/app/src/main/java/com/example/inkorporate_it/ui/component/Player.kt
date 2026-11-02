@@ -1,5 +1,5 @@
 /*
- * For example use only.
+ * For example use only. Try making a composable file like this.
  */
 
 package com.example.inkorporate_it.ui.component
