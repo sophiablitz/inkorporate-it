@@ -57,6 +57,9 @@ dependencies {
     implementation(libs.ink.authoring.compose)
     implementation(libs.ink.brush.compose)
 
+    // WebSocket client for the stroke relay server
+    implementation(libs.okhttp)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,6 +37,7 @@ import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
+import com.blitz.inklings.net.StrokeRelay
 
 @Composable
 fun DrawingScreen() {
@@ -56,6 +58,15 @@ fun DrawingScreen() {
     }
 
     val canvasStrokeRenderer = remember { CanvasStrokeRenderer.create() }
+
+    // Stroke relay: strokes from other devices are added to the same list the canvas draws
+    val relay = remember {
+        StrokeRelay(onStrokeReceived = { stroke -> finishedStrokes = finishedStrokes + stroke })
+    }
+    DisposableEffect(relay) {
+        relay.connect()
+        onDispose { relay.close() }
+    }
 
     // Loupe: mirrors the finger stroke being drawn so it can be shown magnified beside the finger
     val latestBrush by rememberUpdatedState(currentBrush)
@@ -169,6 +180,7 @@ fun DrawingScreen() {
                 )},
                 onStrokesFinished = { newStrokes ->
                     finishedStrokes = finishedStrokes + newStrokes
+                    newStrokes.forEach(relay::send)
                 }
             )
 
