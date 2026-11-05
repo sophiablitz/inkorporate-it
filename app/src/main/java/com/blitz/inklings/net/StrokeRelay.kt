@@ -23,10 +23,20 @@ import org.json.JSONObject
  * Every stroke you finish is sent as JSON; every stroke someone else sends arrives
  * through [onStrokeReceived] (on the main thread, so it can update Compose state).
  *
- * The emulator reaches your PC's localhost at 10.0.2.2.
+ * NOTE: with localhost, the server is ONLY reachable through adb.
+ * `localhost` on a device means the device itself, so each device (emulator or
+ * USB phone) needs an adb tunnel to the PC, set up after it connects and before
+ * the app opens:
+ *
+ *     adb reverse tcp:8080 tcp:8080          (add -s <device-id> if several are connected)
+ *
+ * The tunnel is lost when the device disconnects, the emulator restarts, or adb
+ * restarts — run it again. Without it, Logcat shows "connection to ... failed".
+ * It also assumes the server runs on port 8080 (inklings-server's application.yaml).
+ * If the server port changes, update this URL or map it: adb reverse tcp:8080 tcp:<port>.
  */
 class StrokeRelay(
-    private val url: String = "ws://10.0.2.2:8080/relay",
+    private val url: String = "ws://localhost:8080/relay",
     private val onStrokeReceived: (Stroke) -> Unit,
 ) {
     private val client = OkHttpClient()
