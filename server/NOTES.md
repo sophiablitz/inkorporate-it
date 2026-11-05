@@ -2,7 +2,9 @@
 
 A minimal Ktor server that relays drawing strokes between Inklings apps.
 Whatever one connected client sends to `/relay`, every *other* connected client receives.
-The server never reads the message, so the JSON strokes pass through unchanged.
+Strokes now **stream live** (begin → points → end) so screens watch a drawing appear as
+it happens, and the server keeps the current canvas so a client that joins late is caught
+up with a snapshot. See "Live-streaming protocol" below.
 
 This folder is its **own Gradle build** (own wrapper, own versions: Ktor 3.6.1, Kotlin from
 `gradle/libs.versions.toml`). It is *not* part of the Android app's build, so the two can use different versions.
@@ -50,11 +52,33 @@ This folder is its **own Gradle build** (own wrapper, own versions: Ktor 3.6.1, 
   - `GET /` — "Hello, World!" health check.
   - `/ws` — echo: replies to the sender only (learning step).
   - `/relay` — broadcast. `sessions` is a thread-safe set (`ConcurrentHashMap.newKeySet()`) of everyone
-    connected, shared by all connections. On connect: add self. Each text frame: send to every session except self.
+    connected, shared by all connections. On connect: add self AND send a snapshot of the
+    current canvas. Each text frame: update canvas state, then send to every session except self.
     `finally`: remove self (runs on errors too).
-- Stroke JSON (built in the app's `StrokeRelay.kt`):
-  `{"brush":"Marker","color":<ARGB int>,"size":5.0,"epsilon":0.1,"points":[{"x":..,"y":..,"t":<ms>,"p":<pressure, stylus only>}]}`.
-  `brush` is the toolbar label (`stockBrushes` in `DrawingToolbar.kt`).
+- `src/main/kotlin/CanvasState.kt` — the server's view of the drawing, kept so late joiners
+  can be caught up. It reads only `type` and `id` from each frame and otherwise stores the raw
+  JSON, reassembling whole strokes for the snapshot. No JSON library (small, flat frames).
+
+### Live-streaming protocol
+JSON text frames, one message per frame, each with a `type`:
+- begin  — `{"type":"begin","id":"s1","brush":"Marker","color":<ARGB int>,"size":5.0,"epsilon":0.1}`
+- points — `{"type":"points","id":"s1","points":[{"x":..,"y":..,"t":<ms>,"p":<pressure>}, ...]}` (sent repeatedly while drawing)
+- end    — `{"type":"end","id":"s1"}`
+- clear  — `{"type":"clear"}` (wipes everyone's canvas)
+- snapshot — server → a newly connected client: `{"type":"snapshot","strokes":[<full stroke>, ...]}`
+
+A snapshot stroke has the begin fields plus the accumulated `points`, i.e. the same shape
+as the legacy single-frame stroke, so clients render snapshot and live strokes with one path.
+`brush` is the toolbar label (`stockBrushes` in `DrawingToolbar.kt`).
+
+**Back-compat:** a frame with no `type` but with `points` is treated as one complete stroke
+(the old single-frame protocol). The app still sends this for stylus/eraser input, which the
+finger-only live-streaming path doesn't cover.
+
+### Coordinates are NOT normalized (yet)
+Points are raw screen pixels and are rendered as-is. If two screens have different pixel
+dimensions, strokes land in the wrong place. The Relay Pad is sized 1080×2170 to match the
+emulator's pixels as a workaround. Normalizing to a device-independent space is a planned change.
 
 ## Tested (2026-11-04)
 - Two Node clients on `/relay`: messages reach the other client, not the sender.
@@ -70,9 +94,12 @@ This folder is its **own Gradle build** (own wrapper, own versions: Ktor 3.6.1, 
 - Phone in dark mode → dark canvas, black ink hard to see.
 - No reconnect; "Clear" only clears your own screen; plain `ws://` (cleartext allowed in the app manifest) — switch to `wss://` when deployed.
 
-## Next (from the Ktor learning path)
-Rooms (`/room/{id}`), typed messages (`sealed class` + kotlinx.serialization), first game rule (only the drawer may draw),
-deploy (fat JAR / Docker, then `wss://`).
+## Next
+- **Normalize coordinates** so different screen sizes line up (device-independent space +
+  scale on render; also scale brush `size`). This is the next planned change.
+- Live-stream **stylus/eraser** input too (currently only finger strokes stream live).
+- Rooms (`/room/{id}`), typed messages (`sealed class` + kotlinx.serialization),
+  first game rule (only the drawer may draw), deploy (fat JAR / Docker, then `wss://`).
 
 ## Gotchas
 - **Terminal Gradle needs a full JDK 21**, not a JRE. If `./gradlew run` complains, point `JAVA_HOME` at a JDK

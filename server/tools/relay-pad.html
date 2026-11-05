@@ -23,19 +23,57 @@
   <label>Color <input id="color" type="color" value="#1565c0"></label>
   <button id="clear">Clear</button>
 </header>
-<small>Pretends to be a second phone (1080×2170 canvas, same pixels as the emulator). Draw here → appears on the phone.</small>
+<small>Pretends to be a second phone (1080×2170 canvas, same pixels as the emulator). Strokes stream live both ways; late joiners get the current canvas.</small>
 <canvas id="pad" width="1080" height="2170"></canvas>
 <script>
 const pad = document.getElementById("pad"), ctx = pad.getContext("2d");
 const statusEl = document.getElementById("status");
+
+// Finished strokes, plus strokes still being streamed in (keyed by id). Both are
+// rendered every frame so a remote drawing appears live, point by point.
 const strokes = [];
+const live = new Map(); // id -> stroke being streamed from another client
 let ws;
 
 function connect() {
   ws = new WebSocket("ws://localhost:8080/relay");
   ws.onopen = () => { statusEl.textContent = "connected"; statusEl.className = "ok"; };
   ws.onclose = () => { statusEl.textContent = "disconnected, retrying…"; statusEl.className = "bad"; setTimeout(connect, 1500); };
-  ws.onmessage = (e) => { try { const s = JSON.parse(e.data); strokes.push(s); draw(s); } catch {} };
+  ws.onmessage = (e) => { try { handle(JSON.parse(e.data)); } catch {} };
+}
+
+// Apply one incoming protocol message. Handles the live-streaming protocol
+// (begin/points/end/clear), the catch-up snapshot, and a legacy full stroke.
+function handle(m) {
+  switch (m.type) {
+    case "snapshot":
+      strokes.length = 0;
+      live.clear();
+      (m.strokes || []).forEach((s) => strokes.push(s));
+      redraw();
+      break;
+    case "begin":
+      live.set(m.id, { brush: m.brush, color: m.color, size: m.size, epsilon: m.epsilon, points: [] });
+      break;
+    case "points": {
+      const s = live.get(m.id);
+      if (s && m.points) { s.points.push(...m.points); redraw(); }
+      break;
+    }
+    case "end": {
+      const s = live.get(m.id);
+      if (s) { strokes.push(s); live.delete(m.id); redraw(); }
+      break;
+    }
+    case "clear":
+      strokes.length = 0;
+      live.clear();
+      redraw();
+      break;
+    default:
+      // Legacy single-frame stroke: a full stroke with points and no type.
+      if (m.points) { strokes.push(m); draw(m); }
+  }
 }
 
 const argbToCss = (c) => {
@@ -55,10 +93,18 @@ function draw(s) {
   ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
 }
 
-function redraw() { ctx.clearRect(0, 0, pad.width, pad.height); strokes.forEach(draw); }
+function redraw() {
+  ctx.clearRect(0, 0, pad.width, pad.height);
+  strokes.forEach(draw);
+  live.forEach(draw);
+  if (current) draw(current);
+}
 
-// Drawing: convert mouse/touch position to canvas pixels
-let current = null, t0 = 0;
+// Drawing: convert mouse/touch position to canvas pixels, and stream the stroke live
+// (begin -> points -> end) so other screens see it being drawn, not just the result.
+let current = null, currentId = null, t0 = 0;
+const send = (msg) => { if (ws?.readyState === 1) ws.send(JSON.stringify(msg)); };
+const newId = () => `pad-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const toCanvas = (e) => {
   const r = pad.getBoundingClientRect();
   return { x: (e.clientX - r.left) * pad.width / r.width, y: (e.clientY - r.top) * pad.height / r.height };
@@ -67,23 +113,32 @@ pad.addEventListener("pointerdown", (e) => {
   pad.setPointerCapture(e.pointerId);
   const hex = document.getElementById("color").value;
   const color = (0xFF000000 | parseInt(hex.slice(1), 16)) | 0;
+  currentId = newId();
   current = { brush: "Marker", color, size: 12, epsilon: 0.1, points: [] };
-  t0 = e.timeStamp; add(e);
+  t0 = e.timeStamp;
+  send({ type: "begin", id: currentId, brush: current.brush, color, size: current.size, epsilon: current.epsilon });
+  add(e);
 });
 pad.addEventListener("pointermove", (e) => { if (current) add(e); });
 pad.addEventListener("pointerup", () => {
   if (!current) return;
-  strokes.push(current); redraw();
-  if (ws?.readyState === 1) ws.send(JSON.stringify(current));
-  current = null;
+  strokes.push(current);
+  send({ type: "end", id: currentId });
+  current = null; currentId = null;
+  redraw();
 });
 function add(e) {
   const p = toCanvas(e), last = current.points.at(-1);
   if (last && last.x === p.x && last.y === p.y) return;
-  current.points.push({ x: p.x, y: p.y, t: Math.round(e.timeStamp - t0) });
-  redraw(); draw(current);
+  const point = { x: p.x, y: p.y, t: Math.round(e.timeStamp - t0) };
+  current.points.push(point);
+  send({ type: "points", id: currentId, points: [point] });
+  redraw();
 }
-document.getElementById("clear").onclick = () => { strokes.length = 0; redraw(); };
+document.getElementById("clear").onclick = () => {
+  strokes.length = 0; live.clear(); redraw();
+  send({ type: "clear" });
+};
 connect();
 </script>
 </body>
