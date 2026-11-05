@@ -1,0 +1,14 @@
+# Build output and caches
+build/
+.gradle/
+.kotlin/
+
+# IDE settings (personal)
+.idea/
+*.iml
+
+# Machine-specific paths (SDK location) - never commit
+local.properties
+
+# Heap dumps
+*.hprof

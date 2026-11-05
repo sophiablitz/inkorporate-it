@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay Pad</title>
+<style>
+  :root { --bg: #eceef4; --fg: #1d1f24; --muted: #5d6270; --paper: #f8f6fc; --ok: #1e7d3a; --bad: #b3261e; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif;
+         display: flex; flex-direction: column; align-items: center; padding: 12px 16px; gap: 8px; }
+  header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  #status { font-weight: 600; }
+  #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+  canvas { background: var(--paper); border: 1px solid #c9ccd6; border-radius: 8px; touch-action: none;
+           height: min(80vh, 900px); max-width: 100%; aspect-ratio: 1080 / 2170; cursor: crosshair; }
+  small { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <strong>Relay Pad</strong>
+  <span id="status">connecting…</span>
+  <label>Color <input id="color" type="color" value="#1565c0"></label>
+  <button id="clear">Clear</button>
+</header>
+<small>Pretends to be a second phone (1080×2170 canvas, same pixels as the emulator). Draw here → appears on the phone.</small>
+<canvas id="pad" width="1080" height="2170"></canvas>
+<script>
+const pad = document.getElementById("pad"), ctx = pad.getContext("2d");
+const statusEl = document.getElementById("status");
+const strokes = [];
+let ws;
+
+function connect() {
+  ws = new WebSocket("ws://localhost:8080/relay");
+  ws.onopen = () => { statusEl.textContent = "connected"; statusEl.className = "ok"; };
+  ws.onclose = () => { statusEl.textContent = "disconnected, retrying…"; statusEl.className = "bad"; setTimeout(connect, 1500); };
+  ws.onmessage = (e) => { try { const s = JSON.parse(e.data); strokes.push(s); draw(s); } catch {} };
+}
+
+const argbToCss = (c) => {
+  const u = c >>> 0;
+  return `rgba(${(u >> 16) & 255},${(u >> 8) & 255},${u & 255},${((u >>> 24) & 255) / 255})`;
+};
+
+function draw(s) {
+  if (!s.points?.length) return;
+  ctx.strokeStyle = argbToCss(s.color);
+  ctx.globalAlpha = s.brush === "Highlighter" ? 0.4 : 1;
+  ctx.lineWidth = s.size; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.setLineDash(s.brush === "Dashed Line" ? [s.size * 3, s.size * 2] : []);
+  ctx.beginPath();
+  s.points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+  if (s.points.length === 1) ctx.lineTo(s.points[0].x + 0.1, s.points[0].y);
+  ctx.stroke(); ctx.globalAlpha = 1; ctx.setLineDash([]);
+}
+
+function redraw() { ctx.clearRect(0, 0, pad.width, pad.height); strokes.forEach(draw); }
+
+// Drawing: convert mouse/touch position to canvas pixels
+let current = null, t0 = 0;
+const toCanvas = (e) => {
+  const r = pad.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * pad.width / r.width, y: (e.clientY - r.top) * pad.height / r.height };
+};
+pad.addEventListener("pointerdown", (e) => {
+  pad.setPointerCapture(e.pointerId);
+  const hex = document.getElementById("color").value;
+  const color = (0xFF000000 | parseInt(hex.slice(1), 16)) | 0;
+  current = { brush: "Marker", color, size: 12, epsilon: 0.1, points: [] };
+  t0 = e.timeStamp; add(e);
+});
+pad.addEventListener("pointermove", (e) => { if (current) add(e); });
+pad.addEventListener("pointerup", () => {
+  if (!current) return;
+  strokes.push(current); redraw();
+  if (ws?.readyState === 1) ws.send(JSON.stringify(current));
+  current = null;
+});
+function add(e) {
+  const p = toCanvas(e), last = current.points.at(-1);
+  if (last && last.x === p.x && last.y === p.y) return;
+  current.points.push({ x: p.x, y: p.y, t: Math.round(e.timeStamp - t0) });
+  redraw(); draw(current);
+}
+document.getElementById("clear").onclick = () => { strokes.length = 0; redraw(); };
+connect();
+</script>
+</body>
+</html>
