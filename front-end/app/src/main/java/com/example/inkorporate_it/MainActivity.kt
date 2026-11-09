@@ -30,17 +30,19 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 /*
  * TEMPORARY screen switch.
  * Navigation is UNDECIDED (Ismael's area). Until it exists, this enum and the
- * `when` below decide which screen shows. Lobby, Edit avatar and Settings are
- * empty placeholders. Replace all of this when the real navigation lands.
+ * `when` below decide which screen shows. Lobby, Edit avatar, Settings and
+ * Free Draw are empty placeholders. Replace all of this when the real navigation lands.
  */
-enum class Screen { Home, Lobby, EditAvatar, Settings }
+enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            InkorporateitTheme {
+            // dynamicColor = false: use the team's Material Theme Builder colors,
+            // not the phone's wallpaper colors (Theme.kt defaults to wallpaper colors).
+            InkorporateitTheme(dynamicColor = false) {
                 // Which screen is showing. Starts on Home.
                 var screen by rememberSaveable { mutableStateOf(Screen.Home) }
 
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
                             onCreateGame = { screen = Screen.Lobby },
                             // STUB: the real join call is UNDECIDED. Always succeeds for now.
                             onJoinGame = { _ -> screen = Screen.Lobby },
+                            onFreeDraw = { screen = Screen.FreeDraw },
                             modifier = contentModifier
                         )
                         Screen.Lobby -> PlaceholderScreen(
@@ -79,6 +82,11 @@ class MainActivity : ComponentActivity() {
                         )
                         Screen.Settings -> PlaceholderScreen(
                             title = "Settings (not decided yet)",
+                            onBack = { screen = Screen.Home },
+                            modifier = contentModifier
+                        )
+                        Screen.FreeDraw -> PlaceholderScreen(
+                            title = "Free Draw (placeholder)",
                             onBack = { screen = Screen.Home },
                             modifier = contentModifier
                         )
