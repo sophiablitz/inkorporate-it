@@ -8,7 +8,7 @@ const net = require("net");
 const crypto = require("crypto");
 
 const HOST = "127.0.0.1";
-const PORT = 8080;
+const PORT = Number(process.env.RELAY_PORT) || 8080;
 const PATH = "/relay";
 
 function connect(name, onText, onOpen) {

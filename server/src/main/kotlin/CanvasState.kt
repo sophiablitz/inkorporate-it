@@ -29,7 +29,7 @@ class CanvasState {
      * legacy full stroke) and every point seen so far. `points` is the raw JSON for each
      * point object, concatenated verbatim, so we never lose precision or reorder fields.
      */
-    private class StrokeBuilder(val id: String, var header: String) {
+    private class StrokeBuilder(val id: String, var header: String, val owner: String?) {
         val points = StringBuilder()
         private var count = 0
 
@@ -41,8 +41,15 @@ class CanvasState {
             count++
         }
 
-        /** Reassemble a complete stroke object: header fields + the points array. */
-        fun toStrokeJson(): String = "{$header,\"points\":[$points]}"
+        /**
+         * Reassemble a complete stroke object: header fields + the points array, plus the
+         * server-assigned `owner` so a late joiner knows who drew it (attribution). The
+         * owner is included only when known.
+         */
+        fun toStrokeJson(): String {
+            val ownerField = if (owner != null) ",\"owner\":\"$owner\"" else ""
+            return "{$header$ownerField,\"points\":[$points]}"
+        }
     }
 
     // Insertion-ordered so the snapshot replays strokes in the order they were drawn.
@@ -50,8 +57,15 @@ class CanvasState {
     private val lock = Any()
     private var anonymousCounter = 0L
 
-    /** Update canvas state from one raw client frame. Unknown shapes are ignored. */
-    fun apply(json: String) {
+    /**
+     * Update canvas state from one raw client frame. Unknown shapes are ignored.
+     *
+     * [owner] is the server-assigned player id of the sender, attached to new strokes for
+     * attribution and undo. It is supplied by the caller (not read from the frame) so a
+     * client can't claim to have drawn someone else's stroke. Pass null when the sender
+     * hasn't identified via `hello`.
+     */
+    fun apply(json: String, owner: String? = null) {
         val type = extractStringField(json, "type")
         when (type) {
             "clear" -> synchronized(lock) { strokes.clear() }
@@ -59,7 +73,7 @@ class CanvasState {
             "begin" -> {
                 val id = extractStringField(json, "id") ?: return
                 val header = headerFields(json)
-                synchronized(lock) { strokes[id] = StrokeBuilder(id, header) }
+                synchronized(lock) { strokes[id] = StrokeBuilder(id, header, owner) }
             }
 
             "points" -> {
@@ -75,16 +89,28 @@ class CanvasState {
             // No recognized type. Legacy single-frame stroke: has points, no begin/end.
             null -> {
                 val arrayBody = extractArrayBody(json, "points") ?: return
-                val id = extractStringField(json, "id")
-                    ?: synchronized(lock) { "legacy-${anonymousCounter++}" }
-                val header = headerFields(json)
                 synchronized(lock) {
-                    val b = StrokeBuilder(id, header)
+                    val id = extractStringField(json, "id") ?: "legacy-${anonymousCounter++}"
+                    val header = headerFields(json)
+                    val b = StrokeBuilder(id, header, owner)
                     b.addPointsJsonArray(arrayBody)
                     strokes[id] = b
                 }
             }
         }
+    }
+
+    /**
+     * Remove [owner]'s most recently drawn stroke, if any, and return its id so the caller
+     * can tell every client to drop it. Returns null if that owner has no strokes left.
+     *
+     * "Most recent" uses the insertion order of [strokes] (a [LinkedHashMap]), which is the
+     * order strokes were begun — the same order the snapshot replays them in.
+     */
+    fun undoLast(owner: String): String? = synchronized(lock) {
+        val lastId = strokes.entries.lastOrNull { it.value.owner == owner }?.key ?: return null
+        strokes.remove(lastId)
+        lastId
     }
 
     /** The current canvas as a single snapshot frame for a newly connected client. */

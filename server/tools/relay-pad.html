@@ -19,6 +19,7 @@
 <body>
 <header>
   <strong>Relay Pad</strong>
+  <span id="room"></span>
   <span id="status">connecting…</span>
   <label>Color <input id="color" type="color" value="#1565c0"></label>
   <button id="clear">Clear</button>
@@ -28,6 +29,7 @@
 <script>
 const pad = document.getElementById("pad"), ctx = pad.getContext("2d");
 const statusEl = document.getElementById("status");
+const roomEl = document.getElementById("room");
 
 // Finished strokes, plus strokes still being streamed in (keyed by id). Both are
 // rendered every frame so a remote drawing appears live, point by point.
@@ -35,9 +37,19 @@ const strokes = [];
 const live = new Map(); // id -> stroke being streamed from another client
 let ws;
 
+// Server target is configurable via the URL so one file works against any running
+// server and any room, e.g. relay-pad.html?room=alpha&port=8090. Defaults: the
+// `default` room on port 8080 (the old hardcoded behavior).
+const params = new URLSearchParams(location.search);
+const ROOM = params.get("room") || "default";
+const PORT = params.get("port") || "8080";
+const HOSTPORT = `${location.hostname || "localhost"}:${PORT}`;
+roomEl.textContent = `room: ${ROOM} @ ${HOSTPORT}`;
+document.title = `Relay Pad · ${ROOM}`;
+
 function connect() {
-  ws = new WebSocket("ws://localhost:8080/relay");
-  ws.onopen = () => { statusEl.textContent = "connected"; statusEl.className = "ok"; };
+  ws = new WebSocket(`ws://${HOSTPORT}/relay?room=${encodeURIComponent(ROOM)}`);
+  ws.onopen = () => { statusEl.textContent = `connected · room "${ROOM}"`; statusEl.className = "ok"; };
   ws.onclose = () => { statusEl.textContent = "disconnected, retrying…"; statusEl.className = "bad"; setTimeout(connect, 1500); };
   ws.onmessage = (e) => { try { handle(JSON.parse(e.data)); } catch {} };
 }
