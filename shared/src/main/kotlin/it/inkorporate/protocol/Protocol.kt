@@ -10,9 +10,11 @@ import kotlinx.serialization.json.Json
  * Shared by the Android app and the Ktor server. Every message is one JSON
  * object with a "type" field. The "type" value comes from @SerialName.
  *
- * This is the ONLY copy of the protocol. The front-end and back-end will both
- * build from this file, so they can never disagree on field names. (Not wired
+ * This folder is the ONLY copy of the protocol. The front-end and back-end will
+ * both build from it, so they can never disagree on field names. (Not wired
  * into either build yet.) Change it only with the team's sign-off.
+ *
+ * The shared objects messages carry (Player, Room, ErrorCode...) are in Models.kt.
  *
  * Needs kotlinx.serialization: the "org.jetbrains.kotlin.plugin.serialization"
  * Gradle plugin (same version as Kotlin) and "kotlinx-serialization-json".
@@ -39,65 +41,6 @@ fun encodeClient(msg: ClientMessage): String = ProtocolJson.encodeToString(Clien
 fun decodeClient(text: String): ClientMessage = ProtocolJson.decodeFromString(ClientMessage.serializer(), text)
 fun encodeServer(msg: ServerMessage): String = ProtocolJson.encodeToString(ServerMessage.serializer(), msg)
 fun decodeServer(text: String): ServerMessage = ProtocolJson.decodeFromString(ServerMessage.serializer(), text)
-
-// ---------------------------------------------------------------------------
-// Shared objects
-// ---------------------------------------------------------------------------
-
-@Serializable
-data class Avatar(
-    val hatId: String,
-    val eyesId: String,
-    val inkColor: String,          // hex, like "#000000"
-)
-
-@Serializable
-data class Player(
-    val playerId: String,          // unique, because two players can share a name
-    val name: String,
-    val avatar: Avatar,
-    val isHost: Boolean,
-    val score: Int = 0,
-)
-
-@Serializable
-enum class RoomState {
-    @SerialName("lobby") LOBBY,
-    @SerialName("in_progress") IN_PROGRESS,
-    @SerialName("finished") FINISHED,
-    @SerialName("closed") CLOSED,
-}
-
-@Serializable
-data class RoomSettings(
-    val rounds: Int = 3,
-    val turnSeconds: Int = 80,
-    val maxPlayers: Int = MAX_PLAYERS,
-)
-
-@Serializable
-data class Room(
-    val code: String,              // 6 digits
-    val state: RoomState,
-    val hostId: String,
-    val players: List<Player>,     // in join order, which is also the turn order
-    val settings: RoomSettings = RoomSettings(),
-)
-
-const val MAX_PLAYERS = 8
-const val MIN_PLAYERS_TO_START = 2
-const val WORD_OPTION_COUNT = 3
-
-@Serializable
-enum class ErrorCode {
-    ROOM_NOT_FOUND,
-    ROOM_FULL,
-    GAME_ALREADY_STARTED,
-    NOT_HOST,
-    NOT_DRAWER,
-    BAD_MESSAGE,
-    NOT_ENOUGH_PLAYERS,   // start_game with fewer than MIN_PLAYERS_TO_START
-}
 
 // ---------------------------------------------------------------------------
 // Phone to server
