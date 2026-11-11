@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -140,6 +141,11 @@ fun InkButton(
     // A quick tap is too short to see (and the next screen opens right away), so every
     // tap also plays a full bounce: down, wait, up, and only THEN runs onClick.
     val scope = rememberCoroutineScope()                       // runs code with waits in it
+
+    // onClick runs after a wait. If the screen redraws during that wait with a new
+    // onClick, we want the NEW one, not the one from when the tap started.
+    // rememberUpdatedState always holds the latest onClick passed in.
+    val currentOnClick by rememberUpdatedState(onClick)
     var bouncing by remember { mutableStateOf(false) }         // true = hold the button down
     var clickPending by remember { mutableStateOf(false) }     // true = ignore extra taps
 
@@ -160,7 +166,7 @@ fun InkButton(
         Surface(
             onClick = {
                 if (!hasShadow) {
-                    onClick() // nothing to animate, so no wait
+                    currentOnClick() // nothing to animate, so no wait
                 } else if (!clickPending) {
                     clickPending = true
                     scope.launch {
@@ -169,7 +175,7 @@ fun InkButton(
                         bouncing = false
                         delay(PressHoldMillis)   // button pops back up
                         clickPending = false
-                        onClick()                // now open the next screen, etc.
+                        currentOnClick()         // now open the next screen, etc. (the latest onClick)
                     }
                 }
             },

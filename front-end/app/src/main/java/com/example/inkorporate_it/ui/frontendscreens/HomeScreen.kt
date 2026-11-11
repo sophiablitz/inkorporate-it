@@ -225,7 +225,9 @@ fun HomeScreen(
                         InkButton(
                             onClick = {
                                 focusManager.clearFocus() // saves a name still being typed
-                                onJoinGame(joinCode)
+                                // This runs ~0.18 s after the tap (button bounce). Check the code
+                                // again: a digit deleted in that time must not send 5 digits.
+                                if (isJoinCodeComplete(joinCode)) onJoinGame(joinCode)
                             },
                             enabled = isJoinCodeComplete(joinCode),
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
