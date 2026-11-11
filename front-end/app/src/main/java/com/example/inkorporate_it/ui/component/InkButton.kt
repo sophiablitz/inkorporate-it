@@ -15,11 +15,13 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,10 +29,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
@@ -69,12 +72,31 @@ fun inkOnYellow(): Color {
 
 /*
  * Hard shadow: paints a copy of the shape, moved down by `offset`, behind
- * whatever this modifier is on. drawBehind = "draw this first, under the content".
+ * whatever this modifier is on.
+ *
+ * It also seals the outer edge. The thing on top draws its fill and its outline
+ * with soft (anti-aliased) edges, so a hairline of the FILL color shows through
+ * the edge pixels, which is easy to see over the dark shadow. A thin line in the
+ * shadow color, drawn on the edge AFTER the content, covers it.
+ * That line reaches 1 pixel outside the shape, so the shadow gets the same line,
+ * otherwise the outline would stick out past the shadow's sides.
+ * Assumes the content's outline is the same color as the shadow (true for all ink pieces).
  */
 fun Modifier.hardShadow(shape: Shape, color: Color, offset: Dp): Modifier =
-    this.drawBehind {
+    this.drawWithContent {
         val outline = shape.createOutline(size, layoutDirection, this) // shape at this size
-        translate(top = offset.toPx()) { drawOutline(outline, color) }   // shifted down
+        // 2-pixel line centered on the edge: 1 pixel inside, 1 pixel outside.
+        // The soft edge is about 1 pixel wide on any screen, so 2 pixels always covers it.
+        val edgeLine = Stroke(width = 2f)
+
+        // 1. Shadow, shifted down: filled shape plus the edge line, so it's exactly
+        //    as wide as the outline drawn in step 3.
+        translate(top = offset.toPx()) {
+            drawOutline(outline, color)
+            drawOutline(outline, color, style = edgeLine)
+        }
+        drawContent()                                   // 2. the button / frame itself
+        drawOutline(outline, color, style = edgeLine)   // 3. seal the outer edge
     }
 
 // Press animation timing: the slide takes 80 ms, and each half of a tap's bounce
@@ -129,51 +151,58 @@ fun InkButton(
         label = "press"
     )
 
-    Surface(
-        onClick = {
-            if (!hasShadow) {
-                onClick() // nothing to animate, so no wait
-            } else if (!clickPending) {
-                clickPending = true
-                scope.launch {
-                    bouncing = true
-                    delay(PressHoldMillis)   // button goes (or stays) down
-                    bouncing = false
-                    delay(PressHoldMillis)   // button pops back up
-                    clickPending = false
-                    onClick()                // now open the next screen, etc.
+    // Material's clickable Surface makes itself at least 48dp. A smaller button
+    // (the 46dp settings gear) then gets squeezed back and drawn about 1 pixel off
+    // from its shadow, so the outline and shadow don't line up. Turning that off
+    // here keeps the button exactly the size the caller asked for. Taps just
+    // outside a small button still count: Compose widens the touch area by itself.
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+        Surface(
+            onClick = {
+                if (!hasShadow) {
+                    onClick() // nothing to animate, so no wait
+                } else if (!clickPending) {
+                    clickPending = true
+                    scope.launch {
+                        bouncing = true
+                        delay(PressHoldMillis)   // button goes (or stays) down
+                        bouncing = false
+                        delay(PressHoldMillis)   // button pops back up
+                        clickPending = false
+                        onClick()                // now open the next screen, etc.
+                    }
                 }
+            },
+            enabled = enabled,
+            shape = shape,
+            color = fill,
+            contentColor = text,
+            border = BorderStroke(InkOutlineWidth, border),
+            interactionSource = interactionSource, // so we hear about presses
+            // The shadow goes on the outside, so it's added before Surface draws.
+            // The button moves down by pressOffset and the shadow shrinks by the same
+            // amount, so the shadow stays put and the button "sinks" into it.
+            modifier = if (hasShadow) {
+                modifier
+                    // Lambda form: the animation only re-places the button each frame,
+                    // instead of rebuilding it (lint's advice). roundToPx(): dp → whole pixels.
+                    .offset { IntOffset(x = 0, y = pressOffset.roundToPx()) }
+                    .hardShadow(shape, colors.onBackground, shadow - pressOffset)
+            } else {
+                modifier
             }
-        },
-        enabled = enabled,
-        shape = shape,
-        color = fill,
-        contentColor = text,
-        border = BorderStroke(InkOutlineWidth, border),
-        interactionSource = interactionSource, // so we hear about presses
-        // The shadow goes on the outside, so it's added before Surface draws.
-        // The button moves down by pressOffset and the shadow shrinks by the same
-        // amount, so the shadow stays put and the button "sinks" into it.
-        modifier = if (hasShadow) {
-            modifier
-                // Lambda form: the animation only re-places the button each frame,
-                // instead of rebuilding it (lint's advice). roundToPx(): dp → whole pixels.
-                .offset { IntOffset(x = 0, y = pressOffset.roundToPx()) }
-                .hardShadow(shape, colors.onBackground, shadow - pressOffset)
-        } else {
-            modifier
-        }
-    ) {
-        // Button text uses the theme's titleMedium (Sniglet) unless the caller sets a style.
-        ProvideTextStyle(MaterialTheme.typography.titleMedium) {
-            Row(
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 48.dp) // big enough to tap
-                    .padding(contentPadding),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-                content = content
-            )
+        ) {
+            // Button text uses the theme's titleMedium (Sniglet) unless the caller sets a style.
+            ProvideTextStyle(MaterialTheme.typography.titleMedium) {
+                Row(
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 48.dp) // big enough to tap
+                        .padding(contentPadding),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = content
+                )
+            }
         }
     }
 }
