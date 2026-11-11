@@ -16,13 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.inkorporate_it.model.PlayerSaver
 import com.example.inkorporate_it.model.randomDefaultPlayer
 import com.example.inkorporate_it.ui.frontendscreens.HomeScreen
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
@@ -48,8 +48,11 @@ class MainActivity : ComponentActivity() {
 
                 // The player, kept in memory only (how to save it is not decided).
                 // First launch gets a random team name and the default blob.
-                // Known limit: rotating the phone makes a new random player.
-                var player by remember { mutableStateOf(randomDefaultPlayer()) }
+                // rememberSaveable + PlayerSaver keep the player when the phone rotates,
+                // or dark mode / font size changes. Closing the app still forgets it.
+                var player by rememberSaveable(stateSaver = PlayerSaver) {
+                    mutableStateOf(randomDefaultPlayer())
+                }
 
                 // The phone's Back gesture returns to Home from any placeholder.
                 BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }

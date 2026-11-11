@@ -1,6 +1,11 @@
 package com.example.inkorporate_it
 
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.ui.graphics.Color
+import com.example.inkorporate_it.model.Avatar
 import com.example.inkorporate_it.model.DefaultNames
+import com.example.inkorporate_it.model.Player
+import com.example.inkorporate_it.model.PlayerSaver
 import com.example.inkorporate_it.model.cleanName
 import com.example.inkorporate_it.model.filterJoinCode
 import com.example.inkorporate_it.model.isJoinCodeComplete
@@ -59,5 +64,19 @@ class PlayerDataTest {
     fun randomDefaultPlayer_usesATeamName() {
         val player = randomDefaultPlayer()
         assertTrue(player.username in DefaultNames)
+    }
+
+    // --- PlayerSaver ---
+
+    @Test
+    fun playerSaver_savesAndRestoresTheSamePlayer() {
+        val player = Player(
+            username = "Jerry",
+            avatar = Avatar(hatId = "beanie", eyesId = "wide", inkColor = Color(0xFFE04B3B))
+        )
+        // SaverScope { true } = "every value can be saved", like Android's real save.
+        val saved = with(PlayerSaver) { SaverScope { true }.save(player) }!!
+        val restored = PlayerSaver.restore(saved)
+        assertEquals(player, restored)
     }
 }

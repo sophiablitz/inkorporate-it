@@ -1,6 +1,8 @@
 package com.example.inkorporate_it.model
 
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import kotlin.random.Random
 
 /*
@@ -68,3 +70,34 @@ fun isJoinCodeComplete(code: String): Boolean {
 fun randomDefaultPlayer(random: Random = Random): Player {
     return Player(username = DefaultNames.random(random))
 }
+
+/*
+ * Tells rememberSaveable how to save a Player and get it back.
+ * Rotating the phone, switching dark mode or changing the font size rebuilds
+ * the screen, and plain `remember` forgets everything (new random name).
+ * rememberSaveable keeps values, but only simple ones (text, numbers),
+ * so this turns a Player into a list of those and back.
+ * If Player or Avatar get new fields, add them here too.
+ */
+val PlayerSaver = listSaver<Player, Any>(
+    // Player → [name, hat, eyes, color as one number]
+    save = { player ->
+        listOf(
+            player.username,
+            player.avatar.hatId,
+            player.avatar.eyesId,
+            player.avatar.inkColor.toArgb() // Color → Int (e.g. 0xFF3B4FE0)
+        )
+    },
+    // [name, hat, eyes, color] → Player. Same order as in save.
+    restore = { saved ->
+        Player(
+            username = saved[0] as String,
+            avatar = Avatar(
+                hatId = saved[1] as String,
+                eyesId = saved[2] as String,
+                inkColor = Color(saved[3] as Int) // Int → Color
+            )
+        )
+    }
+)
