@@ -91,6 +91,11 @@ fun HomeScreen(
     // rememberSaveable keeps it when the phone rotates. It also stays after a failed join.
     var joinCode by rememberSaveable { mutableStateOf("") }
 
+    // Lets the buttons take focus away from the name field. NameField saves the
+    // name when it loses focus, so clearing focus first means the name is saved
+    // before we leave Home, whatever the keyboard or field was doing.
+    val focusManager = LocalFocusManager.current
+
     // Same theme, but every text style a bit bolder (see bolder() below).
     MaterialTheme(typography = MaterialTheme.typography.bolder()) {
         Column(
@@ -174,7 +179,10 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 left = {
                     InkButton(
-                        onClick = onCreateGame,
+                        onClick = {
+                            focusManager.clearFocus() // saves a name still being typed
+                            onCreateGame()
+                        },
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         shape = RoundedCornerShape(20.dp),
@@ -215,7 +223,10 @@ fun HomeScreen(
 
                         // Enabled only with exactly 6 digits. Yellow when enabled, grey when not.
                         InkButton(
-                            onClick = { onJoinGame(joinCode) },
+                            onClick = {
+                                focusManager.clearFocus() // saves a name still being typed
+                                onJoinGame(joinCode)
+                            },
                             enabled = isJoinCodeComplete(joinCode),
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = inkOnYellow(), // near-black, in light and dark mode
