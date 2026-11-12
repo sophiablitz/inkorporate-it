@@ -131,8 +131,9 @@ sealed class ServerMessage {
     data class RoomStateUpdate(val room: Room) : ServerMessage()
 
     /** To one phone, when something it asked for failed. */
+    /** Not named Error, so it doesn't hide Kotlin's built-in Error class. */
     @Serializable @SerialName("error")
-    data class Error(val code: ErrorCode, val message: String) : ServerMessage()
+    data class ErrorMessage(val code: ErrorCode, val message: String) : ServerMessage()
 
     /** To everyone except the drawer, while the drawer picks a word. */
     @Serializable @SerialName("drawer_choosing")
