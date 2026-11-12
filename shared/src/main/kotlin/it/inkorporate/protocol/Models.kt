@@ -70,11 +70,11 @@ const val WORD_OPTION_COUNT = 3
 
 @Serializable
 enum class ErrorCode {
-    ROOM_NOT_FOUND,
-    ROOM_FULL,
-    GAME_ALREADY_STARTED,
-    NOT_HOST,
-    NOT_DRAWER,
-    BAD_MESSAGE,
-    NOT_ENOUGH_PLAYERS,   // start_game with fewer than MIN_PLAYERS_TO_START
+    @SerialName("room_not_found") ROOM_NOT_FOUND,
+    @SerialName("room_full") ROOM_FULL,
+    @SerialName("game_already_started") GAME_ALREADY_STARTED,
+    @SerialName("not_host") NOT_HOST,
+    @SerialName("not_drawer") NOT_DRAWER,
+    @SerialName("bad_message") BAD_MESSAGE,
+    @SerialName("not_enough_players") NOT_ENOUGH_PLAYERS,   // start_game with fewer than MIN_PLAYERS_TO_START
 }
