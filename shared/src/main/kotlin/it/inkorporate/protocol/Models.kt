@@ -77,4 +77,5 @@ enum class ErrorCode {
     @SerialName("not_drawer") NOT_DRAWER,
     @SerialName("bad_message") BAD_MESSAGE,
     @SerialName("not_enough_players") NOT_ENOUGH_PLAYERS,   // start_game with fewer than MIN_PLAYERS_TO_START
+    @SerialName("invalid_name") INVALID_NAME,               // name is empty after trimming
 }
