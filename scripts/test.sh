@@ -17,8 +17,8 @@ test_front_end() {
 }
 
 test_back_end() {
-  # Replace this with the real test command once the back-end project exists.
-  echo "==> back-end: no tests yet"
+  echo "==> back-end: unit tests"
+  (cd "$repo_root/back-end" && ./gradlew test --console=plain)
 }
 
 case "$target" in
