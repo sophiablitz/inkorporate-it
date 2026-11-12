@@ -229,11 +229,12 @@ sealed class ServerMessage {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers both sides will want
+// Helpers
 // ---------------------------------------------------------------------------
 
-/** Server: turn a drawer's stroke into the relay message. */
+/**
+ * Server: turn a drawer's stroke into the relay message.
+ * (The phone's canvas model, e.g. a CanvasStroke with a Compose Color, lives
+ * in the front-end, not here.)
+ */
 fun ClientMessage.Stroke.toRelay() = ServerMessage.Stroke(strokeId, points, color, size, done, brush)
-
-/** Phone: convert a server stroke back into the shape the canvas code uses. */
-fun ServerMessage.Stroke.toClientShape() = ClientMessage.Stroke(strokeId, points, color, size, done, brush)
