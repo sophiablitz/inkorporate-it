@@ -13,11 +13,17 @@ import kotlinx.serialization.Serializable
 // Shared objects
 // ---------------------------------------------------------------------------
 
+/**
+ * The look of a player's ink blob. The defaults are what a new player gets,
+ * the same on the phone and the server.
+ * inkColor is a hex string on the wire (the server can't use Compose Color).
+ * The app parses it for drawing.
+ */
 @Serializable
 data class Avatar(
-    val hatId: String,
-    val eyesId: String,
-    val inkColor: String,          // hex, like "#000000"
+    val hatId: String = "none",
+    val eyesId: String = "round",
+    val inkColor: String = "#3B4FE0",   // hex, like "#000000"
 )
 
 @Serializable
