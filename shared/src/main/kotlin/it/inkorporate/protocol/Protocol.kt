@@ -139,9 +139,17 @@ sealed class ServerMessage {
     @Serializable @SerialName("drawer_choosing")
     data class DrawerChoosing(val drawerId: String, val round: Int, val totalRounds: Int) : ServerMessage()
 
-    /** To the drawer only. */
+    /**
+     * To the drawer only. round and totalRounds are the same values guessers
+     * get in drawer_choosing, so the drawer's screen can show "Round 2 of 3".
+     */
     @Serializable @SerialName("word_options")
-    data class WordOptions(val words: List<String>, val secondsToChoose: Int) : ServerMessage()
+    data class WordOptions(
+        val words: List<String>,
+        val secondsToChoose: Int,
+        val round: Int,
+        val totalRounds: Int,
+    ) : ServerMessage()
 
     /**
      * To everyone, once the drawer picks. word is filled in ONLY on the
