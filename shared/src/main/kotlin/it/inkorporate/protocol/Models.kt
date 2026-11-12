@@ -26,12 +26,17 @@ data class Avatar(
     val inkColor: String = "#3B4FE0",   // hex, like "#000000"
 )
 
+/**
+ * A player in a room. Only exists after room_joined: the server assigns
+ * playerId and score. Before that (on Home), the phone just has a name and
+ * an avatar, which is what create_room and join_room send.
+ * Who hosts is on the Room (hostId), not here: check playerId == room.hostId.
+ */
 @Serializable
 data class Player(
     val playerId: String,          // unique, because two players can share a name
     val name: String,
     val avatar: Avatar,
-    val isHost: Boolean,
     val score: Int = 0,
 )
 
