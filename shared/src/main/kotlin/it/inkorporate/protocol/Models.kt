@@ -57,7 +57,7 @@ data class RoomSettings(
 
 @Serializable
 data class Room(
-    val code: String,              // 6 digits
+    val code: String,              // ROOM_CODE_LENGTH digits
     val state: RoomState,
     val hostId: String,
     val players: List<Player>,     // in join order, which is also the turn order
@@ -67,6 +67,12 @@ data class Room(
 const val MAX_PLAYERS = 8
 const val MIN_PLAYERS_TO_START = 2
 const val WORD_OPTION_COUNT = 3
+
+/** Longest name allowed. The server trims names and cuts them to this length. */
+const val MAX_NAME_LENGTH = 16
+
+/** Room codes are exactly this many digits. */
+const val ROOM_CODE_LENGTH = 6
 
 @Serializable
 enum class ErrorCode {

@@ -49,11 +49,17 @@ fun decodeServer(text: String): ServerMessage = ProtocolJson.decodeFromString(Se
 @Serializable
 sealed class ClientMessage {
 
-    /** Host taps Create game. */
+    /**
+     * Host taps Create game. The server trims the name and cuts it to
+     * MAX_NAME_LENGTH characters. Empty after trimming: INVALID_NAME.
+     */
     @Serializable @SerialName("create_room")
     data class CreateRoom(val name: String, val avatar: Avatar) : ClientMessage()
 
-    /** Player enters a code and taps Join. */
+    /**
+     * Player enters a code (ROOM_CODE_LENGTH digits) and taps Join. The name
+     * follows the same rules as create_room.
+     */
     @Serializable @SerialName("join_room")
     data class JoinRoom(val code: String, val name: String, val avatar: Avatar) : ClientMessage()
 
