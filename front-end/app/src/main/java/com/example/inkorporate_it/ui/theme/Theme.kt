@@ -258,8 +258,10 @@ val unspecified_scheme = ColorFamily(
 @Composable
 fun InkorporateitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color is available on Android 12+.
+    // Disabled so the app uses the custom palette defined in Color.kt
+    // instead of the device wallpaper colors.
+    dynamicColor: Boolean = false,
     content: @Composable() () -> Unit
 ) {
     val colorScheme = when {
