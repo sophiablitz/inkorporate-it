@@ -56,4 +56,18 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation("androidx.compose.material:material-icons-core")
+
+    // Jetpack Ink
+    implementation(libs.androidx.ink.authoring)
+    implementation(libs.androidx.ink.brush)
+    implementation(libs.androidx.ink.geometry)
+    implementation(libs.androidx.ink.nativeloader)
+    implementation(libs.androidx.ink.rendering)
+    implementation(libs.androidx.ink.strokes)
+    implementation(libs.androidx.ink.authoring.android)
+    implementation(libs.androidx.ink.authoring.compose)
+    implementation(libs.androidx.ink.brush.compose)
+    implementation(libs.androidx.ink.geometry.compose)
+    implementation(libs.androidx.input.motionprediction)
 }

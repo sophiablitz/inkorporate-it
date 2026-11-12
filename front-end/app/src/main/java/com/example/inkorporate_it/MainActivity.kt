@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 import com.example.inkorporate_it.ui.theme.bodyFontFamily
@@ -22,16 +23,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             InkorporateitTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
 
-                        modifier = Modifier.padding(innerPadding)
-                    )
+
+                SingleDrawScreen(
+                    modifier = Modifier.padding(innerPadding)
+                )
+
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
