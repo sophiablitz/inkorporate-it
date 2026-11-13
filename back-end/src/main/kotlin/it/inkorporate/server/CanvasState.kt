@@ -50,6 +50,12 @@ class CanvasState {
 
     fun clear() = strokes.clear()
 
+    /**
+     * Empties the canvas when a new turn starts. [clear] is for the drawer's Clear button.
+     * strokeIds are not reset, so new strokes never reuse an old id.
+     */
+    fun reset() = strokes.clear()
+
     /** Everything on the canvas, for a phone that just joined. */
     fun snapshot() = ServerMessage.CanvasSnapshot(strokes.values.toList())
 }
