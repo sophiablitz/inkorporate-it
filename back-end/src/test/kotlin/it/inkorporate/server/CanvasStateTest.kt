@@ -50,8 +50,10 @@ class CanvasStateTest {
         val last = canvas.handle(batch(), idMap) as ServerMessage.Stroke
         assertEquals(first.strokeId, last.strokeId) // both batches are the same stroke
         assertTrue(idMap.isEmpty())
+        // The phone reuses its number 1 (e.g. after an app restart, a reconnect, or a new turn).
+        // The last stroke is done, so this must start a new server stroke, not add to the old one.
         val next = canvas.handle(batch(), idMap) as ServerMessage.Stroke
-        assertTrue(next.strokeId > last.strokeId) // the phone's next "stroke 1" is a new stroke
+        assertTrue(next.strokeId > last.strokeId)
     }
 
     @Test
