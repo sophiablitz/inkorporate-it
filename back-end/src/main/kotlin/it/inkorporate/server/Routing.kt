@@ -5,7 +5,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import it.inkorporate.protocol.ClientMessage
 import it.inkorporate.protocol.ErrorCode
 import it.inkorporate.protocol.ServerMessage
 import it.inkorporate.protocol.decodeClient
@@ -63,19 +62,10 @@ fun Application.configureRouting() {
                     }
 
                     lock.withLock {
-                        val relay: ServerMessage = when (msg) {
-                            is ClientMessage.Stroke -> {
-                                val serverId = idMap.getOrPut(msg.strokeId) { canvas.newStrokeId() }
-                                if (msg.done) idMap.remove(msg.strokeId)
-                                canvas.addBatch(serverId, msg)
-                            }
-                            ClientMessage.Undo -> ServerMessage.Undo.also { canvas.undo() }
-                            ClientMessage.Clear -> ServerMessage.Clear.also { canvas.clear() }
-                            // Rooms, turns and guessing are other people's pieces; ignore for now.
-                            else -> {
-                                println("game: not handled yet: $msg")
-                                return@withLock
-                            }
+                        // Rooms, turns and guessing are other people's pieces; ignore for now.
+                        val relay = canvas.handle(msg, idMap) ?: run {
+                            println("game: not handled yet: $msg")
+                            return@withLock
                         }
                         val out = encodeServer(relay)
                         for (other in sessions) {

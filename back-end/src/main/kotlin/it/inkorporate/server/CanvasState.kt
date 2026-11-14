@@ -56,6 +56,24 @@ class CanvasState {
      */
     fun reset() = strokes.clear()
 
+    /**
+     * Handles one drawing message (stroke, undo or clear) from a phone and returns what to
+     * send to the other phones. Returns null for anything that isn't drawing.
+     * Called for every batch as it arrives, so the other phones see the drawing live.
+     *
+     * [idMap] is that phone's own strokeId -> server strokeId, for strokes it is still drawing.
+     */
+    fun handle(msg: ClientMessage, idMap: MutableMap<Int, Int>): ServerMessage? = when (msg) {
+        is ClientMessage.Stroke -> {
+            val serverId = idMap.getOrPut(msg.strokeId) { newStrokeId() }
+            if (msg.done) idMap.remove(msg.strokeId)
+            addBatch(serverId, msg)
+        }
+        ClientMessage.Undo -> ServerMessage.Undo.also { undo() }
+        ClientMessage.Clear -> ServerMessage.Clear.also { clear() }
+        else -> null
+    }
+
     /** Everything on the canvas, for a phone that just joined. */
     fun snapshot() = ServerMessage.CanvasSnapshot(strokes.values.toList())
 }
