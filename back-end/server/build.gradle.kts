@@ -19,8 +19,8 @@ dependencies {
     implementation(ktorLibs.server.netty)
     implementation(ktorLibs.server.websockets)
     implementation(libs.logback.classic)
-    
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
+    testImplementation(ktorLibs.client.websockets)
 }
