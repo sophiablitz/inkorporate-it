@@ -61,7 +61,24 @@ Open the `front-end` folder in Android Studio, not the top-level folder.
    Commits that only touch `back-end/`, `shared/`, or Markdown files don't need
    the flag.
 
-5. **Push.** The first push of a branch needs the `-u` part. Git runs the tests
+5. **Review your own code.** This step is strongly recommended but not required.
+   If you use Claude Code, run the self-review skill from the top-level
+   `inkorporate-it` folder:
+
+   ```text
+   /code-review-before-pr
+   ```
+
+   It compares your branch with `main`, runs the same checks as GitHub, and
+   explains anything to fix. It doesn't commit, push, or change your code unless
+   you ask it to. Fix what it finds, commit again, and re-run it until it says
+   you're ready. Before you open the PR, paste your PR description into the same
+   chat for feedback.
+
+   Without Claude Code, read your own changes the way a reviewer will
+   (`git diff origin/main...HEAD`), and run `scripts/test.sh` before you push.
+
+6. **Push.** The first push of a branch needs the `-u` part. Git runs the tests
    before it pushes, which takes a couple of minutes. Afterward, a plain
    `git push` is enough.
 
@@ -69,13 +86,13 @@ Open the `front-end` folder in Android Studio, not the top-level folder.
    git push -u origin HEAD
    ```
 
-6. **Open a PR.** Git prints a link after you push, or GitHub shows a
+7. **Open a PR.** Git prints a link after you push, or GitHub shows a
    **Compare & pull request** button on the repo page. Fill in the template.
 
-7. **Get reviews.** On the PR's right side, under **Reviewers**, ask a teammate.
+8. **Get reviews.** On the PR's right side, under **Reviewers**, ask a teammate.
    GitHub adds the team leads automatically.
 
-8. **Merge.** When the merge box is green, click **Merge pull request**, then
+9. **Merge.** When the merge box is green, click **Merge pull request**, then
    **Delete branch**.
 
 ## What has to pass before a PR can merge
