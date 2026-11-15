@@ -33,3 +33,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Sophia's private review skill (the code-review-before-pr skill IS shared)
+/.claude/skills/code-review-by-sophia/
