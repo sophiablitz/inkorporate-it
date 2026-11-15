@@ -28,6 +28,24 @@ class CounterMessagesTest {
     }
 
     @Test
+    fun `counter_get encodes to the agreed JSON`() {
+        val json = CounterJson.encodeToString(
+            CounterClientMessage.serializer(),
+            CounterClientMessage.CounterGet
+        )
+        assertEquals("""{"type":"counter_get"}""", json)
+    }
+
+    @Test
+    fun `counter_get decodes from the agreed JSON`() {
+        val msg = CounterJson.decodeFromString(
+            CounterClientMessage.serializer(),
+            """{"type":"counter_get"}"""
+        )
+        assertEquals(CounterClientMessage.CounterGet, msg)
+    }
+
+    @Test
     fun `counter_value encodes to the agreed JSON`() {
         val json = CounterJson.encodeToString(
             CounterServerMessage.serializer(),
