@@ -29,7 +29,8 @@ decide what to flag and how serious it is.
 - No secrets, local config, or build output in the PR.
 - Business logic and data models used by both the app and the server go in `shared/`,
   not copied into both.
-- The branch is up to date with `main` and merges without conflicts.
+- The branch merges into `main` without conflicts. Being behind `main` with no
+  conflicts is fine, because GitHub still allows the merge: make that a Suggestion at most.
 
 ## 3. Kotlin, Compose, and Ktor practice (Must fix or Suggestion)
 

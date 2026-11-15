@@ -46,9 +46,14 @@ commands from the repo root.
 4. If the branch is behind `main`, check for conflicts without touching their files:
    `git merge-tree --write-tree origin/main HEAD`. Exit code 1 means conflicts;
    list the conflicting files. If that command isn't available (Git older than
-   2.38), skip the check and recommend merging `main` anyway.
-   - If there are conflicts or the branch is behind, add a **Must fix** that walks
-     them through CONTRIBUTING.md, "`main` moved while you were working".
+   2.38), skip the check, show ⚠️ for this check, and add a **Suggestion** to merge
+   `main` so any conflicts show up before review.
+   - If there are conflicts, add a **Must fix** that walks them through
+     CONTRIBUTING.md, "`main` moved while you were working".
+   - If the branch is behind but has no conflicts, show ⚠️ for this check and add a
+     **Suggestion**, not a Must fix. GitHub still merges a branch that's behind
+     `main` as long as it has no conflicts. Merging `main` is optional: it lets them
+     test against the latest code, and the same CONTRIBUTING.md section shows how.
 
 ## Step 2: Collect everything that changed
 

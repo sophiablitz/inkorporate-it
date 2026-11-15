@@ -61,8 +61,9 @@ Open the `front-end` folder in Android Studio, not the top-level folder.
    Commits that only touch `back-end/`, `shared/`, or Markdown files don't need
    the flag.
 
-5. **Review your own code.** In Claude Code, run the self-review skill from the
-   top-level `inkorporate-it` folder:
+5. **Review your own code.** This step is strongly recommended but not required.
+   If you use Claude Code, run the self-review skill from the top-level
+   `inkorporate-it` folder:
 
    ```text
    /code-review-before-pr
@@ -73,6 +74,9 @@ Open the `front-end` folder in Android Studio, not the top-level folder.
    you ask it to. Fix what it finds, commit again, and re-run it until it says
    you're ready. Before you open the PR, paste your PR description into the same
    chat for feedback.
+
+   Without Claude Code, read your own changes the way a reviewer will
+   (`git diff origin/main...HEAD`), and run `scripts/test.sh` before you push.
 
 6. **Push.** The first push of a branch needs the `-u` part. Git runs the tests
    before it pushes, which takes a couple of minutes. Afterward, a plain
