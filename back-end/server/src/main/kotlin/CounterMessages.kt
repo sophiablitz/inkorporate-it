@@ -29,6 +29,10 @@ sealed class CounterClientMessage {
     /** The player tapped the button. JSON: {"type":"counter_increment"} */
     @Serializable @SerialName("counter_increment")
     data object CounterIncrement : CounterClientMessage()
+
+    /** Asks for the current value without changing it. JSON: {"type":"counter_get"} */
+    @Serializable @SerialName("counter_get")
+    data object CounterGet : CounterClientMessage()
 }
 
 /** Server to phone. */
