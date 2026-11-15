@@ -22,10 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import com.example.inkorporate_it.model.PlayerSaver
 import com.example.inkorporate_it.model.randomDefaultPlayer
+import com.example.inkorporate_it.network.ServerConnection
 import com.example.inkorporate_it.ui.frontendscreens.HomeScreen
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
+import kotlinx.coroutines.launch
 
 /*
  * TEMPORARY screen switch.
@@ -38,6 +41,8 @@ enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw }
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // TEMPORARY (#141): connect to the local server while this screen is alive.
+        lifecycleScope.launch { ServerConnection.connect() }
         enableEdgeToEdge()
         setContent {
             // dynamicColor = false: use the team's Material Theme Builder colors,
