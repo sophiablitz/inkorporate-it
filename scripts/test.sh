@@ -18,7 +18,7 @@ test_front_end() {
 
 test_back_end() {
   echo "==> back-end: unit tests"
-  (cd "$repo_root/back-end/server" && ./gradlew test --console=plain)
+  (cd "$repo_root/back-end/server" && ./gradlew check --console=plain)
 }
 
 case "$target" in
