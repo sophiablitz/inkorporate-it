@@ -15,7 +15,7 @@ fun Application.configureSockets() {
 
     routing {
         webSocket("/ws") {
-            val who = call.request.origin.remoteHost
+            val who = call.request.origin.remoteAddress
             log.info("WebSocket opened from $who")
             try {
                 for (frame in incoming) {
