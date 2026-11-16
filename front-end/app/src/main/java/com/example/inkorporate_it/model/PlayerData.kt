@@ -3,7 +3,6 @@ package com.example.inkorporate_it.model
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.example.inkorporate_it.ui.theme.BlobColors
 import kotlin.random.Random
 
 /*

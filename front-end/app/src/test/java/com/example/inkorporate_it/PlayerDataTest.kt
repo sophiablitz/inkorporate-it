@@ -2,6 +2,7 @@ package com.example.inkorporate_it
 
 import androidx.compose.runtime.saveable.SaverScope
 import com.example.inkorporate_it.model.Avatar
+import com.example.inkorporate_it.model.BlobColors
 import com.example.inkorporate_it.model.DefaultNames
 import com.example.inkorporate_it.model.Player
 import com.example.inkorporate_it.model.PlayerSaver
@@ -9,7 +10,6 @@ import com.example.inkorporate_it.model.cleanName
 import com.example.inkorporate_it.model.filterJoinCode
 import com.example.inkorporate_it.model.isJoinCodeComplete
 import com.example.inkorporate_it.model.randomDefaultPlayer
-import com.example.inkorporate_it.ui.theme.BlobColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,4 +1,4 @@
-package com.example.inkorporate_it.ui.theme
+package com.example.inkorporate_it.model
 
 import androidx.compose.ui.graphics.Color
 
