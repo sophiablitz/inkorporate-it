@@ -30,12 +30,14 @@ test_shared() {
   (cd "$repo_root" && ./gradlew :shared:check --console=plain)
 }
 
+test_all() {
+  # One Gradle call for everything, so Gradle only starts up once.
+  echo "==> everything: app unit tests and lint, server checks, shared checks"
+  (cd "$repo_root" && ./gradlew :app:testDebugUnitTest :app:lintDebug :server:check :shared:check --console=plain)
+}
+
 case "$target" in
-  all)
-    test_front_end
-    test_back_end
-    test_shared
-    ;;
+  all) test_all ;;
   front-end) test_front_end ;;
   back-end) test_back_end ;;
   shared) test_shared ;;
