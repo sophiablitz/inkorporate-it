@@ -10,6 +10,8 @@ import kotlin.test.assertTrue
 // we just make one and call it.
 class RoomRegistryTest {
 
+    private fun host() = PlayerConnection(id = "h", name = "Host")
+
     // ---------- randomRoomCode ----------
 
     @Test
@@ -27,7 +29,7 @@ class RoomRegistryTest {
     @Test
     fun `created rooms get different codes`() {
         val registry = RoomRegistry()
-        val codes = List(1000) { registry.create().code }
+        val codes = List(1000) { registry.create(host()).code }
         assertEquals(codes.size, codes.toSet().size)
     }
 
@@ -36,8 +38,8 @@ class RoomRegistryTest {
         val codes = mutableListOf("111111", "111111", "222222")
         val registry = RoomRegistry(newCode = { codes.removeFirst() })
 
-        assertEquals("111111", registry.create().code)
-        assertEquals("222222", registry.create().code)
+        assertEquals("111111", registry.create(host()).code)
+        assertEquals("222222", registry.create(host()).code)
     }
 
     // ---------- find ----------
@@ -45,7 +47,7 @@ class RoomRegistryTest {
     @Test
     fun `find returns the room that create made`() {
         val registry = RoomRegistry()
-        val room = registry.create()
+        val room = registry.create(host())
         assertSame(room, registry.find(room.code))
     }
 
@@ -59,7 +61,7 @@ class RoomRegistryTest {
     @Test
     fun `find returns null after remove`() {
         val registry = RoomRegistry()
-        val room = registry.create()
+        val room = registry.create(host())
         registry.remove(room)
         assertNull(registry.find(room.code))
     }
@@ -67,8 +69,8 @@ class RoomRegistryTest {
     @Test
     fun `removing an old room does not delete a new room with the same code`() {
         val registry = RoomRegistry(newCode = { "111111" })
-        val current = registry.create()
-        val stale = GameRoom("111111")   // same code, different room
+        val current = registry.create(host())
+        val stale = GameRoom("111111", host())   // same code, different room
 
         registry.remove(stale)
 

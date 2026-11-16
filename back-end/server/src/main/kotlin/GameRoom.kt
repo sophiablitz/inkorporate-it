@@ -25,12 +25,34 @@ class PlayerConnection(val id: String, val name: String) {
 }
 
 /**
- * One game. #78 adds the host, players, state, broadcast and sendTo.
+ * One game. The [host] is the player who created it, and is always the first
+ * entry in [players]. Still to come: state (#85), broadcast and sendTo.
  *
  * Keep this a plain class, not a data class. [RoomRegistry.remove] relies on two
  * rooms with the same code still being different rooms.
  */
-class GameRoom(val code: String)
+class GameRoom(val code: String, val host: PlayerConnection) {
+    private val joined = mutableListOf(host)
+
+    /**
+     * Everyone in the room, in join order (which is also the turn order).
+     * It is a copy, so nobody can change the room from outside, and so it
+     * cannot change under you while you loop over it.
+     */
+    val players: List<PlayerConnection>
+        get() = synchronized(this) { joined.toList() }
+
+    // Two phones can join or leave the same room at the same moment, and a
+    // plain list breaks if two threads change it at once. synchronized lets
+    // only one of them in at a time.
+    fun addPlayer(player: PlayerConnection) {
+        synchronized(this) { joined.add(player) }
+    }
+
+    fun removePlayer(player: PlayerConnection) {
+        synchronized(this) { joined.remove(player) }
+    }
+}
 
 /**
  * A random room code: exactly [CODE_LENGTH] digits, leading zeros allowed
@@ -57,16 +79,16 @@ class RoomRegistry(private val newCode: () -> String = { randomRoomCode() }) {
 
     /**
      * Make a new room under a code nobody else has, and return it.
-     * #78 adds the host as a parameter.
+     * [host] becomes the room's first player.
      *
      * putIfAbsent checks and adds in one step, so two phones creating rooms at
      * the same moment can never end up with the same code. It returns null when
      * the code was free (our room went in), or the room already there when it
      * wasn't, in which case we try another code.
      */
-    fun create(): GameRoom {
+    fun create(host: PlayerConnection): GameRoom {
         while (true) {
-            val room = GameRoom(newCode())
+            val room = GameRoom(newCode(), host)
             if (rooms.putIfAbsent(room.code, room) == null) return room
         }
     }
