@@ -11,6 +11,20 @@ import kotlin.random.Random
 private const val CODE_LENGTH = 6
 
 /**
+ * One phone that has joined a room. The server picks [id]; two players can
+ * share a [name], so [id] is what tells them apart.
+ *
+ * TODO: add avatar once shared/ is in the server build, and the WebSocket
+ * session once broadcast and sendTo arrive.
+ *
+ * A plain class, not a data class, for the same reason as [GameRoom]: two
+ * players called "Sam" are still two different players.
+ */
+class PlayerConnection(val id: String, val name: String) {
+    var score: Int = 0
+}
+
+/**
  * One game. #78 adds the host, players, state, broadcast and sendTo.
  *
  * Keep this a plain class, not a data class. [RoomRegistry.remove] relies on two
