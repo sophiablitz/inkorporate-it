@@ -20,9 +20,11 @@ It's all one Gradle build. Open this top-level folder in Android Studio, and run
    ```
 
    Wait for `Responding at http://127.0.0.1:8080`. To check it, open http://localhost:8080/health in a browser. It should say `ok`.
+
+   **Tip: run it from inside Android Studio.** Press **Ctrl twice** to open *Run Anything*, type `gradle :server:run` and press Enter. Note that it's `gradle`, not `./gradlew`: Run Anything uses the project's wrapper by itself. The server's log opens in the **Run** panel, and the red square stops it. Android Studio also keeps it in the run configuration list, so next time you can pick it next to `app`.
 3. Start the emulator and press **Run** in Android Studio, with the `app` configuration selected.
 4. The app talks to the server at `10.0.2.2:8080`, which is how the emulator reaches your computer (`localhost` inside the emulator is the emulator itself).
-5. To stop the server, press Ctrl+C in its terminal.
+5. To stop the server, press Ctrl+C in its terminal (or the red square, if you started it with Run Anything).
 
 ## Common commands
 
