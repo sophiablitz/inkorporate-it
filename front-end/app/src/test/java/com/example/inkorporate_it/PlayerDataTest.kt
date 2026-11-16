@@ -75,9 +75,10 @@ class PlayerDataTest {
     // --- BlobColors ---
 
     @Test
-    fun blobColors_hasEightDifferentColors() {
-        // toSet() drops duplicates, so 8 means no color was listed twice.
-        assertEquals(8, BlobColors.all.toSet().size)
+    fun blobColors_hasNoDuplicates() {
+        // toSet() drops duplicates, so the sizes only match if no color is listed twice.
+        // Doesn't check the count, so adding a ninth color won't break this test.
+        assertEquals(BlobColors.all.size, BlobColors.all.toSet().size)
     }
 
     // --- PlayerSaver ---
