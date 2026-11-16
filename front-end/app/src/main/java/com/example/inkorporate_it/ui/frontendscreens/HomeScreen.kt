@@ -1,6 +1,7 @@
 package com.example.inkorporate_it.ui.frontendscreens
 
 import android.content.res.Configuration
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +27,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -310,19 +313,27 @@ private fun BlobColorSheet(
     // skipPartiallyExpanded: open all the way at once (the sheet is short anyway).
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Blob color",
-                style = MaterialTheme.typography.titleMedium // small heading (16sp)
-            )
-            BlobColorSelector(selected = selected, onPick = onPick)
+    // The sheet's handle (the small bar at the top) can be tapped to close the sheet,
+    // and its press effect (ripple) is a square by default. ripple(bounded = false)
+    // makes press effects in the sheet round instead. CompositionLocalProvider
+    // swaps the press effect for everything inside it.
+    // radius = 20.dp: the handle's center is 24dp below the sheet's top edge, so a
+    // 20dp circle stays inside the sheet (a bigger one spilled over the top).
+    CompositionLocalProvider(LocalIndication provides ripple(bounded = false, radius = 20.dp)) {
+        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Blob color",
+                    style = MaterialTheme.typography.titleLarge // sheet heading (22sp)
+                )
+                BlobColorSelector(selected = selected, onPick = onPick)
+            }
         }
     }
 }
