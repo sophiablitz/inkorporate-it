@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -57,7 +59,8 @@ fun AvatarBlob(
 
     // Box stacks its children on top of each other: the blob, then the Edit button.
     Box(modifier = modifier.size(size)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        // semantics: a Canvas is silent to screen readers, so give it a label to read out.
+        Canvas(modifier = Modifier.fillMaxSize().semantics { contentDescription = "Player avatar" }) {
             // How many pixels one design unit is. this.size is the Canvas size in pixels.
             val unit = this.size.width / DESIGN_SIZE
             // Draw in design units from the top-left corner (pivot = Offset.Zero).
