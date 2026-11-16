@@ -23,7 +23,15 @@ Do this once. If you're on Windows, run these commands in Git Bash.
    scripts/setup-hooks.sh
    ```
 
-Open the `front-end` folder in Android Studio, not the top-level folder.
+Open the top-level `inkorporate-it` folder in Android Studio, not `front-end/`.
+The app, the server and `shared/` are one Gradle build with three modules
+(`:app`, `:server` and `:shared`), so you run every `./gradlew` command from the
+top-level folder. See the [README](README.md) for the common commands.
+
+You need the Android SDK, which comes with Android Studio, even if you only
+work on the server: Gradle sets up every module before it runs any task.
+Android Studio writes your SDK's location to `local.properties` in the
+top-level folder. If you had one in `front-end/`, you can delete it.
 
 ## Making a change
 
