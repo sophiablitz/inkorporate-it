@@ -37,7 +37,7 @@ object ServerConnection {
         } catch (e: CancellationException) {
             throw e // the app is closing the connection on purpose, not an error
         } catch (e: Exception) {
-            Log.w(TAG, "Couldn't connect to $SERVER_URL: ${e.message}")
+            Log.w(TAG, "Couldn't connect to $SERVER_URL", e)
         }
     }
 }
