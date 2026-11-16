@@ -30,10 +30,11 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 /*
  * TEMPORARY screen switch.
  * Navigation is UNDECIDED (Ismael's area). Until it exists, this enum and the
- * `when` below decide which screen shows. Lobby, Edit avatar, Settings and
- * Free Draw are empty placeholders. Replace all of this when the real navigation lands.
+ * `when` below decide which screen shows. Lobby, Settings and Free Draw are
+ * empty placeholders. (Edit avatar is a color sheet on Home, not a screen.)
+ * Replace all of this when the real navigation lands.
  */
-enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw }
+enum class Screen { Home, Lobby, Settings, FreeDraw }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +67,6 @@ class MainActivity : ComponentActivity() {
                             player = player,
                             onPlayerChange = { newPlayer -> player = newPlayer },
                             onSettings = { screen = Screen.Settings },
-                            onEditAvatar = { screen = Screen.EditAvatar },
                             onCreateGame = { screen = Screen.Lobby },
                             // STUB: the real join call is UNDECIDED. Always succeeds for now.
                             onJoinGame = { _ -> screen = Screen.Lobby },
@@ -75,11 +75,6 @@ class MainActivity : ComponentActivity() {
                         )
                         Screen.Lobby -> PlaceholderScreen(
                             title = "Lobby (Jerry's screen)",
-                            onBack = { screen = Screen.Home },
-                            modifier = contentModifier
-                        )
-                        Screen.EditAvatar -> PlaceholderScreen(
-                            title = "Edit avatar (not decided yet)",
                             onBack = { screen = Screen.Home },
                             modifier = contentModifier
                         )

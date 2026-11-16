@@ -18,11 +18,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Typography
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -55,6 +59,7 @@ import com.example.inkorporate_it.model.cleanName
 import com.example.inkorporate_it.model.filterJoinCode
 import com.example.inkorporate_it.model.isJoinCodeComplete
 import com.example.inkorporate_it.ui.component.AvatarBlob
+import com.example.inkorporate_it.ui.component.BlobColorSelector
 import com.example.inkorporate_it.ui.component.InkButton
 import com.example.inkorporate_it.ui.component.InkTextField
 import com.example.inkorporate_it.ui.component.dotGrid
@@ -72,7 +77,8 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  *
  * - player / onPlayerChange: the current player, and how to save a new name
  * - joinError: text to show under the code field when joining failed (null = no error)
- * - onSettings, onEditAvatar, onCreateGame, onFreeDraw: button taps
+ * - onSettings, onCreateGame, onFreeDraw: button taps
+ *   (Edit on the blob is handled here on Home: it opens the color sheet, see BlobColorSheet below.)
  * - onJoinGame: Join tapped with a complete 6-digit code
  */
 @Composable
@@ -80,7 +86,6 @@ fun HomeScreen(
     player: Player,
     onPlayerChange: (Player) -> Unit,
     onSettings: () -> Unit,
-    onEditAvatar: () -> Unit,
     onCreateGame: () -> Unit,
     onJoinGame: (code: String) -> Unit,
     onFreeDraw: () -> Unit,
@@ -90,6 +95,9 @@ fun HomeScreen(
     // The code being typed. Only Home needs it, so Home keeps it.
     // rememberSaveable keeps it when the phone rotates. It also stays after a failed join.
     var joinCode by rememberSaveable { mutableStateOf("") }
+
+    // Whether the blob color sheet is open. rememberSaveable keeps it open when the phone rotates.
+    var showColorSheet by rememberSaveable { mutableStateOf(false) }
 
     // Lets the buttons take focus away from the name field. NameField saves the
     // name when it loses focus, so clearing focus first means the name is saved
@@ -151,8 +159,15 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            // 3. The player's blob with the Edit button (opens the avatar editor stub).
-            AvatarBlob(avatar = player.avatar, onEdit = onEditAvatar, size = 220.dp)
+            // 3. The player's blob with the Edit button. Edit opens the color sheet.
+            AvatarBlob(
+                avatar = player.avatar,
+                onEdit = {
+                    focusManager.clearFocus() // saves a name still being typed
+                    showColorSheet = true
+                },
+                size = 220.dp
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -261,6 +276,53 @@ fun HomeScreen(
             // The other half of the leftover height, plus the settings row's height (see above the title).
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(62.dp))
+        }
+
+        // The color sheet, on top of Home while it's open.
+        if (showColorSheet) {
+            BlobColorSheet(
+                selected = player.avatar.inkColor,
+                // copy() makes a new Player (and Avatar) with only the color changed.
+                // The blob above uses player.avatar, so it changes color right away (#119).
+                onPick = { color ->
+                    onPlayerChange(player.copy(avatar = player.avatar.copy(inkColor = color)))
+                },
+                onDismiss = { showColorSheet = false }
+            )
+        }
+    }
+}
+
+/*
+ * A panel that slides up from the bottom with the blob color selector.
+ * Only Home uses it, so it's private to this file.
+ * It closes when the player swipes it down, taps the dimmed area above it,
+ * or presses Back; all of those call onDismiss.
+ * Picking a color doesn't close it, so the player can try a few colors.
+ */
+@OptIn(ExperimentalMaterial3Api::class) // ModalBottomSheet is marked experimental in Material 3
+@Composable
+private fun BlobColorSheet(
+    selected: Color,
+    onPick: (Color) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // skipPartiallyExpanded: open all the way at once (the sheet is short anyway).
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Blob color",
+                style = MaterialTheme.typography.titleMedium // small heading (16sp)
+            )
+            BlobColorSelector(selected = selected, onPick = onPick)
         }
     }
 }
@@ -392,7 +454,6 @@ fun HomeScreenPreview() {
                 player = Player(username = "Alejandro"),
                 onPlayerChange = {},
                 onSettings = {},
-                onEditAvatar = {},
                 onCreateGame = {},
                 onJoinGame = {},
                 onFreeDraw = {}
@@ -410,7 +471,6 @@ fun HomeScreenDarkPreview() {
                 player = Player(username = "Jerry"),
                 onPlayerChange = {},
                 onSettings = {},
-                onEditAvatar = {},
                 onCreateGame = {},
                 onJoinGame = {},
                 onFreeDraw = {}
@@ -428,7 +488,6 @@ fun HomeScreenJoinErrorPreview() {
                 player = Player(username = "Jorge"),
                 onPlayerChange = {},
                 onSettings = {},
-                onEditAvatar = {},
                 onCreateGame = {},
                 onJoinGame = {},
                 onFreeDraw = {},
