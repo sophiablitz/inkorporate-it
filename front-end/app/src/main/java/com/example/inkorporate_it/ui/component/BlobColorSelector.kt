@@ -13,6 +13,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -90,9 +92,19 @@ private fun ColorSwatch(
     Box(
         modifier = Modifier
             .size(48.dp)
+            // Round tap area: without this the press ripple fills the whole 48dp square.
+            .clip(CircleShape)
             // selectable = tappable, and screen readers say "selected" on the picked one.
             // Role.RadioButton: only one swatch can be picked at a time.
-            .selectable(selected = isSelected, onClick = onClick, role = Role.RadioButton)
+            // indication = ripple(): always Material's normal press effect, filling the
+            // round 48dp area, even inside a sheet that changes the default press effect.
+            .selectable(
+                selected = isSelected,
+                interactionSource = null,
+                indication = ripple(),
+                role = Role.RadioButton,
+                onClick = onClick
+            )
             .semantics { contentDescription = label }
             .border(3.dp, ringColor, CircleShape)
             .padding(6.dp), // gap between the ring and the colored circle
