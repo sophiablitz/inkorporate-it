@@ -3,6 +3,7 @@ package com.example.inkorporate_it.model
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.example.inkorporate_it.ui.theme.BlobColors
 import kotlin.random.Random
 
 /*
@@ -27,8 +28,9 @@ data class Player(
     val avatar: Avatar = Avatar()
 )
 
-// Blue, like the blob in Jorge's colorful wireframe. The default color is not decided.
-val DefaultInkColor = Color(0xFF3B4FE0)
+// Indigo, the first blob color (BlobColors.kt), like the blob in Jorge's colorful wireframe.
+// The default color is not decided.
+val DefaultInkColor = BlobColors.Indigo
 
 // Longest name allowed, from the Home screen spec.
 const val MAX_NAME_LENGTH = 16
