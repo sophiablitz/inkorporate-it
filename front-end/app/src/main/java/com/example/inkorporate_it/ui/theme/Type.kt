@@ -3,6 +3,7 @@ package com.example.inkorporate_it.ui.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import com.example.inkorporate_it.R
 
 // Sniglet Regular (400), bundled in res/font so it works offline and on phones
@@ -13,6 +14,13 @@ val bodyFontFamily = FontFamily(
 )
 
 val displayFontFamily = bodyFontFamily
+
+// Sniglet ExtraBold (800), for the ".it" in the Home title.
+// Its own family on purpose: if it were in the family above, every fake-bold
+// (SemiBold) text would switch to this much heavier font.
+val extraBoldFontFamily = FontFamily(
+    Font(R.font.sniglet_extrabold, FontWeight.ExtraBold)
+)
 
 // Default Material 3 typography values
 val baseline = Typography()
