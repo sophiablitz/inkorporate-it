@@ -3,6 +3,7 @@ package it.inkorporate.protocol
 import kotlinx.serialization.json.Json
 
 // Every message the phones and the server send each other.
+// New here? CounterExample.kt shows one message end to end.
 
 /**
  * The one set of JSON rules for every message. The app and the server both use it,
