@@ -36,6 +36,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // Generates BuildConfig.DEBUG, so debug-only things (like the Server test button) can check it.
+        buildConfig = true
     }
     testOptions {
         // Unit tests run on plain Java, where Android classes like android.util.Log are

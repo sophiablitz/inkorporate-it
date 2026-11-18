@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.example.inkorporate_it.model.PlayerSaver
 import com.example.inkorporate_it.model.randomDefaultPlayer
 import com.example.inkorporate_it.ui.frontendscreens.HomeScreen
+import com.example.inkorporate_it.ui.servertest.CounterRoute
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
 /*
@@ -32,15 +34,14 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * Navigation is UNDECIDED (Ismael's area). Until it exists, this enum and the
  * `when` below decide which screen shows. Lobby, Edit avatar, Settings and
  * Free Draw are empty placeholders. Replace all of this when the real navigation lands.
+ * ServerTest is the counter round trip with the server (#139), reached from Home's
+ * "Server test" button.
  */
-enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw }
+enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw, ServerTest }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TEMPORARY (#141): connect to the local server when the app starts.
-        // The counter screen's ViewModel takes this over in #144.
-        (application as InkorporateApp).socket.connect()
         enableEdgeToEdge()
         setContent {
             // dynamicColor = false: use the team's Material Theme Builder colors,
@@ -60,7 +61,18 @@ class MainActivity : ComponentActivity() {
                 // The phone's Back gesture returns to Home from any placeholder.
                 BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    // A way into the server test screen, in debug builds only (what Android Studio's
+                    // Run builds). Release builds can't reach a ws:// server anyway.
+                    floatingActionButton = {
+                        if (BuildConfig.DEBUG && screen == Screen.Home) {
+                            ExtendedFloatingActionButton(onClick = { screen = Screen.ServerTest }) {
+                                Text("Server test")
+                            }
+                        }
+                    }
+                ) { innerPadding ->
                     // innerPadding keeps content clear of the status and navigation bars.
                     val contentModifier = Modifier.padding(innerPadding)
 
@@ -93,6 +105,10 @@ class MainActivity : ComponentActivity() {
                         )
                         Screen.FreeDraw -> PlaceholderScreen(
                             title = "Free Draw (placeholder)",
+                            onBack = { screen = Screen.Home },
+                            modifier = contentModifier
+                        )
+                        Screen.ServerTest -> CounterRoute(
                             onBack = { screen = Screen.Home },
                             modifier = contentModifier
                         )
