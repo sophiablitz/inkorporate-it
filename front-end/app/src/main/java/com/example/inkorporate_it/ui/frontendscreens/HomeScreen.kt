@@ -2,22 +2,25 @@ package com.example.inkorporate_it.ui.frontendscreens
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -48,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import com.example.inkorporate_it.R
 import com.example.inkorporate_it.model.Player
@@ -62,8 +66,8 @@ import com.example.inkorporate_it.ui.component.inkOnYellow
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
 /*
- * The Home screen. Layout follows Jorge's barebones wireframe, top to bottom:
- * settings, title, avatar + Edit, name, Create game, join with a code, Free Draw.
+ * The Home screen. Three sections, top to bottom (#166):
+ * 15% title + settings, 35% avatar + Edit, 50% name, Create game, join with a code, Free Draw.
  * The look (outlines, hard shadows, colors) follows the colorful design.
  *
  * State hoisting: Home doesn't own the player or decide where buttons go.
@@ -98,172 +102,220 @@ fun HomeScreen(
 
     // Same theme, but every text style a bit bolder (see bolder() below).
     MaterialTheme(typography = MaterialTheme.typography.bolder()) {
-        Column(
+        // BoxWithConstraints tells us how much room Home has (maxWidth, maxHeight),
+        // so the sections below can be sized as a share of the screen.
+        BoxWithConstraints(
             modifier = modifier
                 .fillMaxSize()
-                .dotGrid(MaterialTheme.colorScheme.surfaceVariant) // faint dots; before verticalScroll so they stay still
-                // fillMaxSize() before verticalScroll makes the column at least screen-tall,
-                // so the two weight(1f) spacers below can share out the leftover height.
-                .verticalScroll(rememberScrollState()) // scrolls on small screens / with the keyboard open
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .dotGrid(MaterialTheme.colorScheme.surfaceVariant) // faint dots behind everything
+                .imePadding() // the keyboard pushes Home up instead of covering the fields
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // 1. Settings gear, top right: a small rounded square. What it opens is UNDECIDED (stub).
-            Box(modifier = Modifier.fillMaxWidth()) {
-                InkButton(
-                    onClick = onSettings,
-                    shape = RoundedCornerShape(15.dp),
-                    shadow = 3.dp,
-                    contentPadding = PaddingValues(0.dp),
+            // The bottom section gets at least half of Home's height (see 3. below).
+            val bottomMinHeight = maxHeight * 0.5f
+
+            /*
+             * Three sections, top to bottom: 15% title row, 35% avatar, 50% buttons.
+             * No verticalScroll: everything fits on one screen.
+             *
+             * How the split works: the bottom section has no weight, so Column measures
+             * it first, at least half the height (more if its content needs more).
+             * The top row and the avatar then share what's left 15 : 35.
+             * When the bottom takes exactly half, that's 15% / 35% / 50%.
+             * On a short screen the bottom keeps the room it needs and the avatar shrinks.
+             */
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    // On wide screens (the unfolded Fold) stay phone-width and centered.
+                    .widthIn(max = MaxContentWidth)
+                    .fillMaxWidth()
+            ) {
+                // 1. Top row (15%): title on the left, settings on the right.
+                Row(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(46.dp)
+                        .weight(15f)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_settings),
-                        contentDescription = "Settings", // read out by screen readers
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            // Gaps below follow the mockup. On phones taller than the mockup, the leftover
-            // height is split evenly here and at the very bottom (both weight(1f)).
-            // The bottom also gets a fixed 62dp, the same as the settings row (46dp) plus
-            // this 16dp gap, so the empty space above the title matches the space below Free Draw.
-            Spacer(modifier = Modifier.height(16.dp))
-            Spacer(modifier = Modifier.weight(1f))
-
-            // 2. Title: "inkorporate" plus ".it" in the theme's primary color.
-            // One size up (displayMedium). ExtraBold is FAKED: Type.kt only loads Sniglet Regular,
-            // so Android draws it thicker. (Real Sniglet ExtraBold was tried Nov 9: too heavy and wide.)
-            Text(
-                text = buildAnnotatedString {
-                    append("inkorporate")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append(".it")
-                    }
-                },
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.ExtraBold
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            // 3. The player's blob with the Edit button (opens the avatar editor stub).
-            AvatarBlob(avatar = player.avatar, onEdit = onEditAvatar, size = 220.dp)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 4. Name. copy() makes a new Player with only the username changed.
-            Text(
-                text = "Name",
-                style = MaterialTheme.typography.titleMedium, // small heading above a field (16sp)
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            NameField(
-                name = player.username,
-                onNameChange = { newName -> onPlayerChange(player.copy(username = newName)) },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // 5 + 6. Create game on the left, join with a code on the right.
-            // MatchRightHeightRow (bottom of this file) makes Create game exactly as tall
-            // as the right column, in one measuring step.
-            MatchRightHeightRow(
-                gap = 16.dp,
-                modifier = Modifier.fillMaxWidth(),
-                left = {
-                    InkButton(
-                        onClick = {
-                            focusManager.clearFocus() // saves a name still being typed
-                            onCreateGame()
+                    // Title: "inkorporate" plus ".it" in the theme's primary color.
+                    // ExtraBold is FAKED: Type.kt only loads Sniglet Regular, so Android draws it thicker.
+                    // weight(1f): the title takes all the width the settings button doesn't.
+                    // autoSize: starts at displayMedium (45sp) and steps down until it fits on one
+                    // line, so it doesn't wrap on narrow phones.
+                    Text(
+                        text = buildAnnotatedString {
+                            append("inkorporate")
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                append(".it")
+                            }
                         },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        shape = RoundedCornerShape(20.dp),
-                        shadow = 6.dp
+                        style = MaterialTheme.typography.displayMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 24.sp,
+                            maxFontSize = MaterialTheme.typography.displayMedium.fontSize
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Settings gear: a small rounded square. What it opens is UNDECIDED (stub).
+                    InkButton(
+                        onClick = onSettings,
+                        shape = RoundedCornerShape(15.dp),
+                        shadow = 3.dp,
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.size(46.dp)
                     ) {
-                        Text(
-                            text = "Create game", // wraps to two lines at this width
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings),
+                            contentDescription = "Settings", // read out by screen readers
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                },
-                right = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                }
+
+                // 2. Avatar (35%): the biggest square that fits, so the blob grows and
+                // shrinks with the screen. The Edit button opens the avatar editor stub.
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .weight(35f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // min(): the smaller of this section's width and height.
+                    // Minus 16dp so the blob's shadow and the Edit pill stay inside the section.
+                    val blobSize = (min(maxWidth, maxHeight) - 16.dp).coerceAtLeast(0.dp)
+                    AvatarBlob(avatar = player.avatar, onEdit = onEditAvatar, size = blobSize)
+                }
+
+                // 3. Bottom (at least 50%): name, Create / Join, Free Draw.
+                // spacedBy(..., CenterVertically): 24dp between the parts, and any spare
+                // height split above and below them.
+                // padding(top) after heightIn: the 16dp is part of the 50%, and keeps "Name"
+                // off the avatar on short screens where there's no spare height.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = bottomMinHeight)
+                        .padding(top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // 4. Name. copy() makes a new Player with only the username changed.
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = "or with a code",
+                            text = "Name",
                             style = MaterialTheme.typography.titleMedium, // small heading above a field (16sp)
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        InkTextField(
-                            value = joinCode,
-                            // filterJoinCode drops letters and stops at 6 digits.
-                            onValueChange = { typed -> joinCode = filterJoinCode(typed) },
-                            placeholder = "Code",
-                            errorText = joinError, // red outline + message when joining failed
-                            // Spaced-out digits, like the design.
-                            textStyle = MaterialTheme.typography.titleMedium.copy(letterSpacing = 4.sp),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number, // number keyboard
-                                imeAction = ImeAction.Go           // keyboard shows a "Go" key
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onGo = { if (isJoinCodeComplete(joinCode)) onJoinGame(joinCode) }
-                            ),
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NameField(
+                            name = player.username,
+                            onNameChange = { newName -> onPlayerChange(player.copy(username = newName)) },
                             modifier = Modifier.fillMaxWidth()
                         )
+                    }
 
-                        // Enabled only with exactly 6 digits. Yellow when enabled, grey when not.
-                        InkButton(
-                            onClick = {
-                                focusManager.clearFocus() // saves a name still being typed
-                                // This runs ~0.18 s after the tap (button bounce). Check the code
-                                // again: a digit deleted in that time must not send 5 digits.
-                                if (isJoinCodeComplete(joinCode)) onJoinGame(joinCode)
-                            },
-                            enabled = isJoinCodeComplete(joinCode),
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = inkOnYellow(), // near-black, in light and dark mode
-                            shadow = 4.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Join game")
+                    // 5 + 6. Create game on the left, join with a code on the right.
+                    // MatchRightHeightRow (bottom of this file) makes Create game exactly as tall
+                    // as the right column, in one measuring step.
+                    MatchRightHeightRow(
+                        gap = 16.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                        left = {
+                            InkButton(
+                                onClick = {
+                                    focusManager.clearFocus() // saves a name still being typed
+                                    onCreateGame()
+                                },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                shape = RoundedCornerShape(20.dp),
+                                shadow = 6.dp
+                            ) {
+                                Text(
+                                    text = "Create game", // wraps to two lines at this width
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        },
+                        right = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "or with a code",
+                                    style = MaterialTheme.typography.titleMedium, // small heading above a field (16sp)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                InkTextField(
+                                    value = joinCode,
+                                    // filterJoinCode drops letters and stops at 6 digits.
+                                    onValueChange = { typed -> joinCode = filterJoinCode(typed) },
+                                    placeholder = "Code",
+                                    errorText = joinError, // red outline + message when joining failed
+                                    // Spaced-out digits, like the design.
+                                    textStyle = MaterialTheme.typography.titleMedium.copy(letterSpacing = 4.sp),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number, // number keyboard
+                                        imeAction = ImeAction.Go           // keyboard shows a "Go" key
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onGo = { if (isJoinCodeComplete(joinCode)) onJoinGame(joinCode) }
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                // Enabled only with exactly 6 digits. Yellow when enabled, grey when not.
+                                InkButton(
+                                    onClick = {
+                                        focusManager.clearFocus() // saves a name still being typed
+                                        // This runs ~0.18 s after the tap (button bounce). Check the code
+                                        // again: a digit deleted in that time must not send 5 digits.
+                                        if (isJoinCodeComplete(joinCode)) onJoinGame(joinCode)
+                                    },
+                                    enabled = isJoinCodeComplete(joinCode),
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = inkOnYellow(), // near-black, in light and dark mode
+                                    shadow = 4.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Join game")
+                                }
+                            }
                         }
+                    )
+
+                    // 7. Free Draw: full-width white button with a pencil icon.
+                    InkButton(
+                        onClick = onFreeDraw,
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 58.dp) // at least 58dp; taller if big phone text needs room
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_edit),
+                            contentDescription = null // the "Free Draw" text already says what it does
+                        )
+                        Text("Free Draw", style = MaterialTheme.typography.titleLarge)
                     }
                 }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 7. Free Draw: full-width white button with a pencil icon.
-            InkButton(
-                onClick = onFreeDraw,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 58.dp) // at least 58dp; taller if big phone text needs room
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_edit),
-                    contentDescription = null // the "Free Draw" text already says what it does
-                )
-                Text("Free Draw", style = MaterialTheme.typography.titleLarge)
             }
-
-            // The other half of the leftover height, plus the settings row's height (see above the title).
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(62.dp))
         }
     }
 }
+
+// Widest Home's content gets. Phones are narrower, so this only matters on the unfolded Fold and tablets.
+private val MaxContentWidth = 420.dp
 
 /*
  * The theme's text styles, all one step bolder (SemiBold), for Home only.
