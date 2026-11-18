@@ -37,6 +37,12 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Unit tests run on plain Java, where Android classes like android.util.Log are
+        // empty stand-ins that throw. This makes them do nothing instead, so code that logs
+        // (GameClient, for example) can be unit tested.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -53,7 +59,10 @@ dependencies {
     // Ktor's WebSocket client, from the same Ktor catalog the server uses.
     implementation(ktorLibs.client.okhttp)
     implementation(ktorLibs.client.websockets)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
