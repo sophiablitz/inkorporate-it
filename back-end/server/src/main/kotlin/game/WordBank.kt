@@ -30,12 +30,16 @@ class WordBank( // creates an empty wordBank
         Difficulty.HARD to hardWords.toMutableList()
     )
 
-    private val usedWords = mutableSetOf<String>()
+    private val usedWords = mutableSetOf<String>() // only WordBank can change this
 
-    var currentWord: String? = null // ? allows for string and nullable types
-        private set
+    private currentWord: String? = null // ? allows for string and nullable types
 
     // functions
+
+    // getter
+    fun getCurrentWord(): String {
+        return currentWord
+    }
 
     // returns every word, across all 3 difficulties that has not been used yet
     fun updateAvailableWords(): List<String> {
