@@ -1,3 +1,5 @@
+package it.inkorporate.game
+
 
 enum class Difficulty {EASY, MEDIUM, HARD } // defines the 3 types, keys for easy look up
 
