@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -78,7 +80,7 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * The caller passes the player in and gets told what happened through the
  * on... functions. Navigation is UNDECIDED, so the caller wires these later.
  *
- * - player / onPlayerChange: the current player, and how to save a new name
+ * - player / onPlayerChange: the current player, and how to save a new name or blob color
  * - joinError: text to show under the code field when joining failed (null = no error)
  * - onSettings, onCreateGame, onFreeDraw: button taps
  *   (Edit on the blob is handled here on Home: it opens the color sheet, see BlobColorSheet below.)
@@ -319,6 +321,8 @@ private fun BlobColorSheet(
     // swaps the press effect for everything inside it.
     // radius = 20.dp: the handle's center is 24dp below the sheet's top edge, so a
     // 20dp circle stays inside the sheet (a bigger one spilled over the top).
+    // Anything added to this sheet later gets this small effect too, unless it sets
+    // its own indication (BlobColorSelector does: indication = ripple()).
     CompositionLocalProvider(LocalIndication provides ripple(bounded = false, radius = 20.dp)) {
         ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
             Column(
@@ -330,7 +334,9 @@ private fun BlobColorSheet(
             ) {
                 Text(
                     text = "Blob color",
-                    style = MaterialTheme.typography.titleLarge // sheet heading (22sp)
+                    style = MaterialTheme.typography.titleLarge, // sheet heading (22sp)
+                    // heading(): screen readers (TalkBack) can jump straight to this title.
+                    modifier = Modifier.semantics { heading() }
                 )
                 BlobColorSelector(selected = selected, onPick = onPick)
             }
