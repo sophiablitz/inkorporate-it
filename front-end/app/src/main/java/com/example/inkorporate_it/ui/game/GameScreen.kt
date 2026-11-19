@@ -76,6 +76,9 @@ fun GameScreen(
         onSendMessage = viewModel::onSendMessage,
         onSendStroke = viewModel::onSendStroke,
         onClearCanvas = viewModel::onClearCanvas,
+        onContinueGame = viewModel::onStartNextRound,
+        onCloseRoom = viewModel::onCloseRoom,
+        onGoToLobby = viewModel::onGoToLobby,
         onLeave = leave,
         onStubPhase = viewModel::stubSetPhase,
         modifier = modifier,
@@ -89,11 +92,14 @@ fun GameScreen(
     onSendMessage: (String) -> Unit,          // for GuessingScreen, once it's built
     onSendStroke: (Stroke) -> Unit,         // for DrawingScreen, once it's built
     onClearCanvas: () -> Unit,          // for DrawingScreen, once it's built
+    onContinueGame: () -> Unit,
+    onCloseRoom: () -> Unit,
+    onGoToLobby: () -> Unit,
     onLeave: () -> Unit,
     onStubPhase: (phase: GamePhase, isMyTurnToDraw: Boolean) -> Unit, // STUB: placeholder buttons
     modifier: Modifier = Modifier,
 ) {
-    Column{
+    Column {
         TopBar(onLeave)
 
         when (state.phase) {
@@ -102,14 +108,22 @@ fun GameScreen(
                 onStart = onStartGame,
                 modifier = modifier,
             )
+
             GamePhase.Drawing -> if (state.isMyTurnToDraw) {
-                DrawingScreen(state, modifier, onStubPhase)
+                DrawingScreen(state, onSendStroke, onClearCanvas, modifier, onStubPhase)
             } else {
                 GuessingScreen(state, onSendMessage, modifier, onStubPhase)
             }
-            GamePhase.RoundOver -> EndOfRoundScreen(state, modifier, onStubPhase)
 
-            GamePhase.GameOver -> EndOfGameScreen(state, modifier, onStubPhase)
+            GamePhase.RoundOver -> EndOfRoundScreen(state, onContinueGame, modifier, onStubPhase)
+
+            GamePhase.GameOver -> EndOfGameScreen(
+                state,
+                onCloseRoom,
+                onGoToLobby,
+                modifier,
+                onStubPhase
+            )
         }
     }
 }
@@ -120,10 +134,12 @@ fun GameScreen(
  */
 
 @Composable
-private fun TopBar(onLeave: () -> Unit){
+private fun TopBar(onLeave: () -> Unit) {
     // Top bar: Leave button
     Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LeaveButton(onClick = onLeave)
@@ -155,6 +171,9 @@ private fun GameScreenPreview(state: GameUiState) {
                 onSendMessage = {},
                 onSendStroke = {},
                 onClearCanvas = {},
+                onContinueGame = {},
+                onCloseRoom = {},
+                onGoToLobby = {},
                 onLeave = {},
                 onStubPhase = { _, _ -> },
             )
@@ -168,7 +187,11 @@ fun GameScreenLobbyPreview() {
     GameScreenPreview(previewGuesserState.copy(phase = GamePhase.Waiting))
 }
 
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Game, guessing, dark")
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    name = "Game, guessing, dark"
+)
 @Composable
 fun GameScreenGuessingPreview() {
     GameScreenPreview(previewGuesserState)

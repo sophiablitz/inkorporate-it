@@ -26,5 +26,5 @@ fun GuessingScreen(
 @Composable
 fun GuessingScreenPreview() {
     // uncomment when stub has been removed
-//    InkorporateitTheme { GuessingScreen (previewGuesserState) }
+//    InkorporateitTheme { GuessingScreen (previewGuesserState, onSendMessage = {}) }
 }

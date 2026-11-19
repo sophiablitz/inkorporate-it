@@ -7,6 +7,8 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun EndOfGameScreen(
     state: GameUiState,
+    onCloseRoom: () -> Unit,
+    onGoToLobby: () -> Unit,
     modifier: Modifier = Modifier,
     /* STUB: placeholder -- remove once connected*/
     onStubPhase: (phase: GamePhase, isMyTurnToDraw: Boolean) -> Unit
@@ -25,5 +27,5 @@ fun EndOfGameScreen(
 @Composable
 fun EndOfGameScreenPreview() {
     // uncomment when stub has been removed
-//    InkorporateitTheme { EndOfGameScreen (previewGuesserState) }
+//    InkorporateitTheme { EndOfGameScreen (previewGuesserState, onCloseRoom = {}, onGoToLobby = {}, ) }
 }

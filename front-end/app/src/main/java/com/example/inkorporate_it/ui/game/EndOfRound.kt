@@ -7,6 +7,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun EndOfRoundScreen(
     state: GameUiState,
+    onContinueGame: () -> Unit,
     modifier: Modifier = Modifier,
     /* STUB: placeholder -- remove once connected*/
     onStubPhase: (phase: GamePhase, isMyTurnToDraw: Boolean) -> Unit
@@ -27,5 +28,5 @@ fun EndOfRoundScreen(
 @Composable
 fun EndOfRoundScreenPreview() {
     // uncomment when stub has been removed
-//    InkorporateitTheme { EndOfRoundScreen (previewGuesserState) }
+//    InkorporateitTheme { EndOfRoundScreen (previewGuesserState, onContinueGame = {} ) }
 }

@@ -75,6 +75,22 @@ class GameViewModel(gameCode: String?) : ViewModel() {
         stubSetPhase(GamePhase.Drawing, isMyTurnToDraw = true)
     }
 
+    /** The host tapped Start in the end of round screen. TODO: ask the server to start the next round. */
+    fun onStartNextRound() {
+        // TODO
+    }
+
+    /** The host's call to return to the lobby to start a new game. TODO: send server a message to go to lobby */
+    fun onGoToLobby() {
+        // TODO
+    }
+    
+    /** The host's call to close the room. TODO: send server message to close room */
+    fun onCloseRoom() {
+        // TODO
+    }
+
+
     /** The player sent a message. TODO: send it through ChatRepository. */
     fun onSendMessage(text: String) {
         // TODO
