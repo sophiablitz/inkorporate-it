@@ -104,10 +104,14 @@ class MainActivity : ComponentActivity() {
                         // The whole game (lobby, rounds, end screens). GameScreen creates its
                         // GameViewModel here, so the ViewModel lasts exactly as long as this
                         // screen is on the back stack and is cleared when the player leaves.
+                        // The player's name and avatar are passed in directly, not in the route:
+                        // Avatar holds a Compose Color, which a route can't carry.
                         composable<AppRoute.Game> { backStackEntry ->
                             val route = backStackEntry.toRoute<AppRoute.Game>()
                             GameScreen(
                                 gameCode = route.code,
+                                username = username,
+                                avatar = avatar,
                                 onLeave = { navController.popBackStack() },
                             )
                         }

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.inkorporate_it.model.Avatar
 import com.example.inkorporate_it.ui.component.LeaveButton
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
@@ -32,7 +33,7 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  *                                                       └──▶ End of game ──▶ Lobby
  *
  * In two parts:
- * 1. GameScreen(gameCode, onLeave): what the app's NavHost calls. Creates the
+ * 1. GameScreen(gameCode, username, avatar, onLeave): what the app's NavHost calls. Creates the
  *    GameViewModel for this game, reads its uiState, and passes it down.
  * 2. GameScreen(state, ...): picks what to show with when(state.phase). Draws only from
  *    the state it's given, so previews can hand it any GameUiState.
@@ -46,19 +47,24 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
 /**
  * - gameCode: null = create a new game, a 6-digit code = join that game
+ * - username, avatar: this player, as set on Home. Sent to the room when creating or joining.
  * - onLeave: go back out of the game (MainActivity pops it off the back stack).
  *   Runs after GameViewModel.leaveGame(), for both the Leave button and the Back gesture.
  */
 @Composable
 fun GameScreen(
     gameCode: String?,
+    username: String,
+    avatar: Avatar,
     onLeave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Creates the ViewModel the first time, with this game's code; after that (rotation,
-    // dark mode) it returns the same one. It's tied to this screen's place on the back stack,
-    // so it's cleared when the player leaves the game.
-    val viewModel: GameViewModel = viewModel(factory = GameViewModel.factory(gameCode))
+    // Creates the ViewModel the first time, with this game's code and player; after that
+    // (rotation, dark mode) it returns the same one. It's tied to this screen's place on the
+    // back stack, so it's cleared when the player leaves the game.
+    val viewModel: GameViewModel = viewModel(
+        factory = GameViewModel.factory(gameCode, username, avatar),
+    )
 
     // collectAsStateWithLifecycle stops listening while the app is in the background.
     val state by viewModel.uiState.collectAsStateWithLifecycle()
