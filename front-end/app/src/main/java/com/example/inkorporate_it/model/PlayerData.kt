@@ -27,8 +27,9 @@ data class Player(
     val avatar: Avatar = Avatar()
 )
 
-// Blue, like the blob in Jorge's colorful wireframe. The default color is not decided.
-val DefaultInkColor = Color(0xFF3B4FE0)
+// Indigo, the first blob color (BlobColors.kt), like the blob in Jorge's colorful wireframe.
+// The default color is not decided.
+val DefaultInkColor = BlobColors.Indigo
 
 // Longest name allowed, from the Home screen spec.
 const val MAX_NAME_LENGTH = 16
