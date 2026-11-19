@@ -89,13 +89,13 @@ fun GameScreen(
 fun GameScreen(
     state: GameUiState,
     onStartGame: () -> Unit,
-    onSendMessage: (String) -> Unit,          // for GuessingScreen, once it's built
-    onSendStroke: (Stroke) -> Unit,         // for DrawingScreen, once it's built
-    onClearCanvas: () -> Unit,          // for DrawingScreen, once it's built
-    onContinueGame: () -> Unit,
-    onCloseRoom: () -> Unit,
-    onGoToLobby: () -> Unit,
-    onLeave: () -> Unit,
+    onSendMessage: (String) -> Unit,  // for GuessingScreen, once it's built
+    onSendStroke: (Stroke) -> Unit,  // for DrawingScreen, once it's built
+    onClearCanvas: () -> Unit,  // for DrawingScreen, once it's built
+    onContinueGame: () -> Unit,  // for EndOfRound host to continue came after a round
+    onCloseRoom: () -> Unit,  // for EndOfGame host to close a room
+    onGoToLobby: () -> Unit,  // for EndOfGame host to return to lobby in same room
+    onLeave: () -> Unit,  // for player to leave a game
     onStubPhase: (phase: GamePhase, isMyTurnToDraw: Boolean) -> Unit, // STUB: placeholder buttons
     modifier: Modifier = Modifier,
 ) {
