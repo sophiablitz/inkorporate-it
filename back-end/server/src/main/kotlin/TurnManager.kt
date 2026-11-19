@@ -1,4 +1,4 @@
-package it.inkorporate.game
+package it.inkorporate
 
 /*
 The TurnManager file is in charge of round logic,
