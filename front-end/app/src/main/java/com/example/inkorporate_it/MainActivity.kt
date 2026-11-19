@@ -38,6 +38,9 @@ enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw }
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // TEMPORARY (#141): connect to the local server when the app starts.
+        // The counter screen's ViewModel takes this over in #144.
+        (application as InkorporateApp).socket.connect()
         enableEdgeToEdge()
         setContent {
             // dynamicColor = false: use the team's Material Theme Builder colors,
