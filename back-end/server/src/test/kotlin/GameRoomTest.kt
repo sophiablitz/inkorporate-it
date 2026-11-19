@@ -111,4 +111,30 @@ class GameRoomTest {
 
         assertEquals(1, calls)
     }
+
+    // ---------- the host leaving closes the room (#83) ----------
+
+    @Test
+    fun `the room is deleted when the host leaves, even with others still in it`() {
+        val registry = RoomRegistry()
+        val room = registry.create(host)
+        room.addPlayer(PlayerConnection(id = "a", name = "Ana"))
+
+        room.removePlayer(host)
+
+        assertNull(registry.find(room.code))
+    }
+
+    @Test
+    fun `onClosed runs once when the host leaves and then everyone else does`() {
+        var calls = 0
+        val room = GameRoom("123456", host, onClosed = { calls++ })
+        val ana = PlayerConnection(id = "a", name = "Ana")
+        room.addPlayer(ana)
+
+        room.removePlayer(host)   // closes the room
+        room.removePlayer(ana)    // the room is now empty, but it's already closed
+
+        assertEquals(1, calls)
+    }
 }
