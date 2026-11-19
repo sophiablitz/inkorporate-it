@@ -1,9 +1,12 @@
 package it.inkorporate
 
+import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class GameRoomTest {
 
@@ -38,6 +41,40 @@ class GameRoomTest {
         room.removePlayer(sam1)
 
         assertEquals(listOf(host, sam2), room.players)
+    }
+
+    // ---------- a room holds at most 8 players (#81) ----------
+
+    private fun player(n: Int) = PlayerConnection(id = "p$n", name = "Player $n")
+
+    @Test
+    fun `a room takes up to 8 players`() {
+        val room = GameRoom("123456", host)
+
+        // The host is player 1, so 7 more fill it up.
+        for (n in 2..8) assertTrue(room.addPlayer(player(n)), "player $n should get in")
+
+        assertEquals(8, room.players.size)
+    }
+
+    @Test
+    fun `the 9th player is turned away`() {
+        val room = GameRoom("123456", host)
+        for (n in 2..8) room.addPlayer(player(n))
+        val ninth = player(9)
+
+        assertFalse(room.addPlayer(ninth))
+        assertFalse(ninth in room.players)
+    }
+
+    @Test
+    fun `20 players joining at once still makes only 8`() {
+        val room = GameRoom("123456", host)
+
+        // 20 threads, each one a phone tapping Join at the same moment.
+        List(20) { n -> thread { room.addPlayer(player(n + 2)) } }.forEach { it.join() }
+
+        assertEquals(8, room.players.size)
     }
 
     // ---------- the last player leaving deletes the room (#84) ----------
