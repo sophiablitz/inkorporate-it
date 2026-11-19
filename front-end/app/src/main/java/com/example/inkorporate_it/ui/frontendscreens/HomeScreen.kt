@@ -57,6 +57,7 @@ import com.example.inkorporate_it.ui.component.InkTextField
 import com.example.inkorporate_it.ui.component.dotGrid
 import com.example.inkorporate_it.ui.component.inkOnYellow
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
+import com.example.inkorporate_it.ui.theme.extraBoldFontFamily
 
 /*
  * The Home screen. Layout follows Jorge's barebones wireframe, top to bottom:
@@ -132,19 +133,25 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Spacer(modifier = Modifier.weight(1f))
 
-            // 2. Title: "inkorporate" plus ".it" in the theme's primary color.
-            // One size up (displayMedium). ExtraBold is FAKED: Type.kt only loads Sniglet Regular,
-            // so Android draws it thicker. (Real Sniglet ExtraBold was tried Nov 9: too heavy and wide.)
+            // 2. Title: "inkorporate" in Sniglet Regular (with Home's usual fake bold),
+            // then ".it" in the real Sniglet ExtraBold font and the theme's primary color.
+            // buildAnnotatedString = one piece of text where parts can have their own style.
+            // SpanStyle = the style for the part inside withStyle { }.
             Text(
                 text = buildAnnotatedString {
                     append("inkorporate")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    withStyle(
+                        SpanStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = extraBoldFontFamily, // the bundled ExtraBold file (Type.kt)
+                            fontWeight = FontWeight.ExtraBold // matches that file, so nothing is faked
+                        )
+                    ) {
                         append(".it")
                     }
                 },
                 style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.ExtraBold
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(36.dp))
