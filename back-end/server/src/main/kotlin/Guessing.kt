@@ -5,6 +5,9 @@ import kotlin.math.roundToInt
 /**
  * Scoring for guessers and the drawer, from the back-end design doc's scoring table.
  * The Guessing class that uses these arrives with #105.
+ *
+ * roundToInt rounds half away from zero, which matches the design table's round-half-up
+ * (for example 91.5 -> 92) because these scores are never negative: the early returns guarantee it.
  */
 
 /**
@@ -17,15 +20,12 @@ private fun timeBonus(secondsTaken: Int, turnSeconds: Int): Double {
     return 0.5 + 0.5 * (timeLeft.toDouble() / turnSeconds)
 }
 
-// Round-half-up: Kotlin's roundToInt does exactly this for the 91.5 -> 92 case in the design table.
-private fun roundHalfUp(points: Double): Int = points.roundToInt()
-
 /** Points for the guesser who got it [rank]-th (1 = first). Follows the design doc's scoring table. */
 fun pointsForGuess(rank: Int, secondsTaken: Int, turnSeconds: Int, playerCount: Int): Int {
     // playerCount is currently unused; kept so callers match the planned signature.
     if (turnSeconds <= 0 || rank < 1) return 0
     val points = (100 + 60.0 / rank) * timeBonus(secondsTaken, turnSeconds)
-    return roundHalfUp(points)
+    return points.roundToInt()
 }
 
 /**
@@ -36,5 +36,5 @@ fun pointsForDrawer(guessSecondsTaken: List<Int>, turnSeconds: Int, totalGuesser
     if (turnSeconds <= 0 || totalGuessers <= 0 || guessSecondsTaken.isEmpty()) return 0
     val meanTimeBonus = guessSecondsTaken.map { timeBonus(it, turnSeconds) }.average()
     val points = 250.0 * (guessSecondsTaken.size.toDouble() / totalGuessers) * meanTimeBonus
-    return roundHalfUp(points)
+    return points.roundToInt()
 }
