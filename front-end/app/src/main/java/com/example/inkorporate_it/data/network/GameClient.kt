@@ -11,18 +11,20 @@ import kotlinx.coroutines.flow.asStateFlow
 /*
  * The app's one connection to the game server.
  *
- *   GameViewModel ──▶ repositories ──▶ GameClient ──▶ GameSocket ──▶ server
- *        ▲                                 │
- *        └──────── StateFlows ◀────────────┘   (the server's messages, turned into state)
+ *   GameViewModel ──▶ GameClient ──▶ GameSocket ──▶ server
+ *        ▲                │
+ *        └── StateFlows ◀─┘   (the server's messages, turned into state)
+ *
+ * GameViewModel calls the send functions and combines the flows into GameUiState:
+ *
+ *     val uiState = combine(client.room, client.chat, client.strokes) { ... }
+ *         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GameUiState())
  *
  * Sending: one function per thing the player can do. Each one turns the call into a
  * protocol message (shared/.../protocol/Protocol.kt) and sends it through the socket.
  *
  * Receiving: once connected, GameClient reads socket.incoming in `scope`, decodes each
- * message, and updates one of the flows below. The flows match the three repositories:
- *   room     → GameStateRepository
- *   chat     → ChatRepository
- *   strokes  → DrawingRepository
+ * message, and updates one of the flows below (room, chat or strokes).
  *
  * The server decides everything (phase, who draws, scores). GameClient never changes
  * the room itself after a send: it waits for the server's reply to update the flows.
@@ -62,28 +64,18 @@ class GameClient(
     /** One-off errors to show once (wrong code, room full, lost connection). */
     val errors: SharedFlow<String> = _errors.asSharedFlow()
 
-    // --- Connection ---
 
-    /**
+    // --- Room ---
+
+    /** Ask the server for a new room with this player as host. Store the reply as a connection and
+     * listen to the flow of updates from the server. Reply: the room, with its code.
      * Connect to the server and start reading its messages.
      * TODO: connection = Connecting; socket.connect(url); connection = Connected;
      *       scope.launch { socket.incoming.collect { handleMessage(it) } };
      *       on failure, connection = Failed and emit to errors.
      */
-    suspend fun connect(url: String) {
-        // TODO
-    }
-
-    /** Leave any room and close the connection. TODO: socket.close(); reset every flow. */
-    suspend fun disconnect() {
-        // TODO
-    }
-
-    // --- Room ---
-
-    /** Ask the server for a new room with this player as host. Reply: the room, with its code. */
-    suspend fun createRoom(playerName: String) {
-        // TODO: send the create-room message
+    suspend fun createRoom(playerName: String): String {
+        TODO("Make connection and return room code.")
     }
 
     /** Ask to join the room with this 6-digit code. Reply: the room, or an error. */
@@ -96,7 +88,8 @@ class GameClient(
         // TODO: send the leave-room message, then clear room, chat and strokes
     }
 
-    /** Host only: close the room for everyone. */
+    /** Host only: close the room for everyone. Leave the room and close the connection.
+    TODO: socket.close(); reset every flow. */
     suspend fun closeRoom() {
         // TODO: send the close-room message
     }
