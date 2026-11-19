@@ -39,7 +39,7 @@ import com.example.inkorporate_it.ui.theme.surfaceContainerLowestLight
  *
  * The blob is drawn on a Canvas from the design's 200 x 200 drawing. Every number
  * below is in those design units; scale() stretches them to the real size, so the
- * blob looks the same at 220dp on Home and at 64dp in the Lobby.
+ * blob looks the same at 220dp on Home and at 48dp in the Lobby.
  * The face is the same for everyone; only avatar.inkColor changes.
  * Hats and eye styles (hatId, eyesId) are still placeholders and aren't drawn.
  *
@@ -166,6 +166,6 @@ fun AvatarBlobDarkPreview() {
 @Composable
 fun AvatarBlobSmallPreview() {
     InkorporateitTheme(dynamicColor = false) {
-        AvatarBlob(avatar = Avatar(), size = 64.dp)
+        AvatarBlob(avatar = Avatar(), size = 48.dp)
     }
 }
