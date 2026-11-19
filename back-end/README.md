@@ -1,4 +1,4 @@
-# back-end
+clear# back-end
 
 The Ktor game server lives in `server/`.
 

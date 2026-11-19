@@ -15,25 +15,43 @@ class WordBank(
 ){
     // variables
     private val availableWords = mutableSetOf<String>()
-    private var currentWord: String? = null // start with an empty word
+    private var currentWord: String? = null
 
     // functions
 
     /*
     1. populate the list
     2. give the user the current word
-    3. update used words
-    4. update available words
-    5. clear the word list at the end of the game
+    3. update the list
+    5. reset the word list at the end of the game
      */
+
+    fun getCurrentWord(): String? {
+        return currentWord
+    }
 
     fun loadJson(json: String) {
         val file = Json.decodeFromString<WordFile>(json)
         availableWords.addAll(file.words)
     }
 
-    fun getCurrentWord(): String? {
+    fun chooseWord(): String? {
+        currentWord = availableWords.random()
         return currentWord
+    }
+
+    fun updateList(): MutableSet<String> {
+        // if there is a current word, and it is still available, remove it
+        currentWord?.let {
+            if (it in availableWords) {
+                availableWords.remove(it)
+            }
+        }
+        return availableWords
+    }
+
+    fun resetList(){
+        return availableWords.clear()
     }
 
 }
