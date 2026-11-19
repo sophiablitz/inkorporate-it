@@ -15,10 +15,13 @@ kotlin {
     jvmToolchain(21)
 }
 dependencies {
+    implementation(project(":shared"))
     implementation(ktorLibs.server.core)
     implementation(ktorLibs.server.netty)
+    implementation(ktorLibs.server.websockets)
     implementation(libs.logback.classic)
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
+    testImplementation(ktorLibs.client.websockets)
 }

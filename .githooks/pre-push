@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
-# Runs the tests for whichever parts of the project this branch changed, so
-# back-end developers don't need the Android SDK to push.
+# Runs the tests for whichever parts of the project this branch changed.
+# Since #16 everything is one Gradle build, so every part needs the Android SDK.
 
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 changed="$(git diff --name-only origin/main...HEAD)"
+
+# shared/ and the root build files affect everything, so run all the checks.
+if echo "$changed" | grep -qE '^(shared/|settings\.gradle\.kts$|build\.gradle\.kts$|gradle\.properties$|gradle/|gradlew)'; then
+  "$repo_root/scripts/test.sh"
+  exit 0
+fi
 
 if echo "$changed" | grep -q '^front-end/'; then
   "$repo_root/scripts/test.sh" front-end
