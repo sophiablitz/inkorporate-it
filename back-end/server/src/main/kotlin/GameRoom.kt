@@ -28,10 +28,19 @@ class PlayerConnection(val id: String, val name: String) {
  * One game. The [host] is the player who created it, and is always the first
  * entry in [players]. Still to come: state (#85), broadcast and sendTo.
  *
+ * [onClosed] runs once the room closes, which for now means the last player
+ * left (#84). [RoomRegistry.create] sets it to remove the room, so empty rooms
+ * don't pile up on the server. A room made on its own (like in a test) does
+ * nothing when it closes.
+ *
  * Keep this a plain class, not a data class. [RoomRegistry.remove] relies on two
  * rooms with the same code still being different rooms.
  */
-class GameRoom(val code: String, val host: PlayerConnection) {
+class GameRoom(
+    val code: String,
+    val host: PlayerConnection,
+    private val onClosed: (GameRoom) -> Unit = {},
+) {
     private val joined = mutableListOf(host)
 
     /**
@@ -49,8 +58,17 @@ class GameRoom(val code: String, val host: PlayerConnection) {
         synchronized(this) { joined.add(player) }
     }
 
+    /**
+     * Take [player] out of the room. If they were the last one, call [onClosed].
+     *
+     * "Was removed AND is now empty" means removing the same player twice
+     * (say, leave_room and then the disconnect) only calls [onClosed] once.
+     * onClosed runs after the synchronized block, so the room isn't locked
+     * while the registry does its part.
+     */
     fun removePlayer(player: PlayerConnection) {
-        synchronized(this) { joined.remove(player) }
+        val lastOneOut = synchronized(this) { joined.remove(player) && joined.isEmpty() }
+        if (lastOneOut) onClosed(this)
     }
 }
 
@@ -88,7 +106,7 @@ class RoomRegistry(private val newCode: () -> String = { randomRoomCode() }) {
      */
     fun create(host: PlayerConnection): GameRoom {
         while (true) {
-            val room = GameRoom(newCode(), host)
+            val room = GameRoom(newCode(), host, onClosed = { remove(it) })
             if (rooms.putIfAbsent(room.code, room) == null) return room
         }
     }
