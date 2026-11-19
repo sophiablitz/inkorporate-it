@@ -10,6 +10,9 @@ import kotlin.random.Random
 // TODO: use ROOM_CODE_LENGTH from shared/ once the protocol is in the server build.
 private const val CODE_LENGTH = 6
 
+// TODO: use MAX_PLAYERS from shared/ once the protocol has it.
+private const val MAX_PLAYERS = 8
+
 /**
  * One phone that has joined a room. The server picks [id]; two players can
  * share a [name], so [id] is what tells them apart.
@@ -54,8 +57,15 @@ class GameRoom(
     // Two phones can join or leave the same room at the same moment, and a
     // plain list breaks if two threads change it at once. synchronized lets
     // only one of them in at a time.
-    fun addPlayer(player: PlayerConnection) {
-        synchronized(this) { joined.add(player) }
+
+    /**
+     * Add [player] to the end of the room, unless it's full. Returns false when
+     * the room already has [MAX_PLAYERS], so join_room can send ROOM_FULL (#81).
+     * The "is it full?" check and the add happen inside the same lock. If they
+     * didn't, two phones could both see 7 players, both get in, and make 9.
+     */
+    fun addPlayer(player: PlayerConnection): Boolean = synchronized(this) {
+        if (joined.size >= MAX_PLAYERS) false else joined.add(player)
     }
 
     /**
