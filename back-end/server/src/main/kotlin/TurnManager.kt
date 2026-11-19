@@ -1,6 +1,8 @@
 package it.inkorporate
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class WordFile( // this file is used to parse JSON file of words
@@ -12,7 +14,6 @@ class WordBank(
     // this parameter has no val/var, is only used for initialization
 ){
     // variables
-    private val usedWords = mutableSetOf<String>() // only WordBank can change this
     private val availableWords = mutableSetOf<String>()
     private var currentWord: String? = null // start with an empty word
 
@@ -25,6 +26,11 @@ class WordBank(
     4. update available words
     5. clear the word list at the end of the game
      */
+
+    fun loadJson(json: String) {
+        val file = Json.decodeFromString<WordFile>(json)
+        availableWords.addAll(file.words)
+    }
 
     fun getCurrentWord(): String? {
         return currentWord
