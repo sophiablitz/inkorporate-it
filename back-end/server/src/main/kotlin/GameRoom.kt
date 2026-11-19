@@ -31,10 +31,10 @@ class PlayerConnection(val id: String, val name: String) {
  * One game. The [host] is the player who created it, and is always the first
  * entry in [players]. Still to come: state (#85), broadcast and sendTo.
  *
- * [onClosed] runs once the room closes, which for now means the last player
- * left (#84). [RoomRegistry.create] sets it to remove the room, so empty rooms
- * don't pile up on the server. A room made on its own (like in a test) does
- * nothing when it closes.
+ * [onClosed] runs once the room closes: when the host leaves (#83), or when the
+ * last player leaves (#84). [RoomRegistry.create] sets it to remove the room,
+ * so closed rooms don't pile up on the server. A room made on its own (like in
+ * a test) does nothing when it closes.
  *
  * Keep this a plain class, not a data class. [RoomRegistry.remove] relies on two
  * rooms with the same code still being different rooms.
@@ -45,6 +45,10 @@ class GameRoom(
     private val onClosed: (GameRoom) -> Unit = {},
 ) {
     private val joined = mutableListOf(host)
+
+    /** True once the room has closed, so [onClosed] never runs twice. */
+    private var closed = false
+    //This is just a flag for the function that we're gonna see further bellow... 
 
     /**
      * Everyone in the room, in join order (which is also the turn order).
@@ -69,16 +73,33 @@ class GameRoom(
     }
 
     /**
-     * Take [player] out of the room. If they were the last one, call [onClosed].
+     * Take [player] out of the room. The room closes, and [onClosed] runs, if
+     * they were the host (#83) or the last one left (#84).
      *
-     * "Was removed AND is now empty" means removing the same player twice
-     * (say, leave_room and then the disconnect) only calls [onClosed] once.
+     * [closed] makes sure onClosed only runs once. After the host leaves, the
+     * others leave too (later they'll get room_closed), and without the flag
+     * the last of them would close the room a second time. "Was removed" also
+     * means removing the same player twice (say, leave_room and then the
+     * disconnect) does nothing the second time.
+     *
      * onClosed runs after the synchronized block, so the room isn't locked
      * while the registry does its part.
      */
-    fun removePlayer(player: PlayerConnection) {
-        val lastOneOut = synchronized(this) { joined.remove(player) && joined.isEmpty() }
-        if (lastOneOut) onClosed(this)
+    fun removePlayer(player: PlayerConnection) { // function remove the player (player param, using the PlayerConnection class) from the room (GameRoom class)
+        val closesNow = synchronized(this) { //Lock this room so that no other thread can modify it while we are removing the player (The last expression is the val), this is how Kotlin blocks work
+            val removed = joined.remove(player) // This is a boolean. If the player is in the room, remove them and return true, otherwise return false (They were never in the room). 
+            val shouldClose = removed && !closed && (player === host || joined.isEmpty())
+            // Im gonna need alot of lines to describe this: 
+            // This is a tripple boolean expression, conjointed with ANDS. it checks the following: 
+            // 1. removed (Did the player get removed from this room?), it's a checker for duplicate removals.
+            // 2. !closed (Is the room still open or not?)... This is to ensure that the room is for one, open, and for two, that it only closes once. 
+            // 3. player === host || joined.isEmpty (was the player the same host that created the room, or is the room just empty?) These are the main reasons a room closes at all: if the host leaves, or if there's nobody left inside. I'll have to check what happens if a player is left logged inside when they aren't the host, could be trouble, but that's in the future..... 
+            if (shouldClose) closed = true
+            // This is a removal mark. If the removal closes the room, mark this under the block immediately, and line 91 gets (closed = true). This means, in easy terms, it won't close twice ever. 
+            shouldClose
+        }   //this is what goes into closes now.
+        if (closesNow) onClosed(this)
+        //This basically tells the outside of the block "Hey, if you're listening to this, the room is closed!"
     }
 }
 
