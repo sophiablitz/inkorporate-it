@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.inkorporate_it.model.Avatar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,9 +14,10 @@ import kotlinx.coroutines.flow.update
  * Holds the game's state and handles what the player does in it.
  * GameScreen reads uiState and calls the on...() functions. It never changes state itself.
  *
- * Created with a join code (see factory below):
+ * Created with a join code and this player's name and avatar (see factory below):
  * - gameCode = null   → createGame(): this phone starts a new room and is the host
  * - gameCode = "012345" → joinGame("012345"): this phone joins that room
+ * Either way, the name and avatar are what the other players see for this phone.
  *
  * Codes are 6 digits kept as text, so a leading 0 is never lost.
  *
@@ -25,7 +27,11 @@ import kotlinx.coroutines.flow.update
  *     val uiState = combine(gameState.state, chat.messages, drawing.strokes) { ... }
  *         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GameUiState())
  */
-class GameViewModel(gameCode: String?) : ViewModel() {
+class GameViewModel(
+    gameCode: String?,
+    private val username: String,
+    private val avatar: Avatar,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameUiState())
 
@@ -37,20 +43,26 @@ class GameViewModel(gameCode: String?) : ViewModel() {
         if (gameCode == null) createGame() else joinGame(gameCode)
     }
 
-    /** Start a new room as its host. TODO: ask the server to create a room. */
+    /**
+     * Start a new room as its host.
+     * TODO: ask the server to create a room, sending username and avatar.
+     */
     private fun createGame() {
         // STUB: a fake room with two players, so the lobby's Start button is enabled (it needs 2+).
         _uiState.value = GameUiState(
             roomCode = "STUB",
             isHost = true,
             players = listOf(
-                GamePlayer(name = "You", isHost = true),
+                GamePlayer(name = username, avatar = avatar, isHost = true),
                 GamePlayer(name = "Stub player"),
             ),
         )
     }
 
-    /** Join someone else's room. TODO: send the code to the server; show an error if it's wrong. */
+    /**
+     * Join someone else's room.
+     * TODO: send the code, username and avatar to the server; show an error if the code is wrong.
+     */
     private fun joinGame(code: String) {
         // STUB: pretend the code worked. Guests have no Start button: they wait for the host.
         _uiState.value = GameUiState(
@@ -58,7 +70,7 @@ class GameViewModel(gameCode: String?) : ViewModel() {
             isHost = false,
             players = listOf(
                 GamePlayer(name = "Stub host", isHost = true),
-                GamePlayer(name = "You"),
+                GamePlayer(name = username, avatar = avatar),
             ),
         )
     }
@@ -116,12 +128,16 @@ class GameViewModel(gameCode: String?) : ViewModel() {
 
     companion object {
         /**
-         * Builds a GameViewModel for a join code (null = create a new game).
-         * Needed because the ViewModel takes a constructor argument, and plain viewModel()
+         * Builds a GameViewModel for a join code (null = create a new game) and this player.
+         * Needed because the ViewModel takes constructor arguments, and plain viewModel()
          * only knows how to build ViewModels with no arguments.
          */
-        fun factory(gameCode: String?): ViewModelProvider.Factory = viewModelFactory {
-            initializer { GameViewModel(gameCode) }
+        fun factory(
+            gameCode: String?,
+            username: String,
+            avatar: Avatar,
+        ): ViewModelProvider.Factory = viewModelFactory {
+            initializer { GameViewModel(gameCode, username, avatar) }
         }
     }
 }
