@@ -137,4 +137,13 @@ class GameRoomTest {
 
         assertEquals(1, calls)
     }
+
+    // ---------- the server picks player ids (#79, #80) ----------
+
+    @Test
+    fun `every new player id is different`() {
+        val ids = List(1000) { newPlayerId() }
+
+        assertEquals(1000, ids.toSet().size)
+    }
 }
