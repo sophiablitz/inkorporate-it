@@ -1,5 +1,6 @@
 package it.inkorporate
 
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 
@@ -112,6 +113,18 @@ class GameRoom(
  */
 fun randomRoomCode(random: Random = Random.Default): String =
     buildString { repeat(CODE_LENGTH) { append(random.nextInt(10)) } }
+
+/**
+ * A new id for a player who creates or joins a room (#79, #80). The server
+ * picks it, never the phone, so nobody can pretend to be someone else.
+ *
+ * A random UUID, like "3f2b9c1e-...". There are so many of them that two
+ * players getting the same one won't happen in practice, so unlike room codes
+ * there's nothing to check or retry.
+ */
+fun newPlayerId(): String = UUID.randomUUID().toString() 
+//If the phone sends its own Id, other people could copy another player's ID and pretend to be them. 
+//There's no real retry loop... because the chance of getting a collision is small asf. 
 
 /**
  * Every live room on the server, by code. There is one registry for the whole
