@@ -14,6 +14,9 @@ private const val CODE_LENGTH = 6
 // TODO: use MAX_PLAYERS from shared/ once the protocol has it.
 private const val MAX_PLAYERS = 8
 
+// TODO: use MAX_NAME_LENGTH from shared/ once the protocol has it.
+private const val MAX_NAME_LENGTH = 16 //This is just a constant that defined the max name length of all players. Private, so that its untouchable
+
 /**
  * One phone that has joined a room. The server picks [id]; two players can
  * share a [name], so [id] is what tells them apart.
@@ -122,7 +125,22 @@ fun randomRoomCode(random: Random = Random.Default): String =
  * players getting the same one won't happen in practice, so unlike room codes
  * there's nothing to check or retry.
  */
-fun newPlayerId(): String = UUID.randomUUID().toString() 
+fun newPlayerId(): String = UUID.randomUUID().toString()
+
+/**
+ * The name a player typed, tidied up, or null if nothing is left of it (#79,
+ * #80). create_room and join_room send INVALID_NAME when this is null.
+ *
+ * Spaces at both ends are dropped, then the name is cut to [MAX_NAME_LENGTH]
+ * characters. The end is trimmed again after the cut, because cutting can
+ * leave a space at the end ("Bartholomew     Jones" becomes "Bartholomew").
+ */
+fun cleanName(name: String): String? = //This is a function that basically mods the name of a person to make it readable: 
+    name.trim().take(MAX_NAME_LENGTH).trimEnd().ifEmpty { null } //name (drop spaces) (Keep the firstmost 16 letters) (trim the end of the word again, for spaces in the end) (if theres nothing left, throw null and createroom / joinroom will return invalid.)
+//Sidenote: why are we cutting, instead of just rejecting? 
+//well, it's because it keeps the general game flow going, while the text field
+//can only accept 16 characters anyway. If you guys want me to change this ask.
+
 //If the phone sends its own Id, other people could copy another player's ID and pretend to be them. 
 //There's no real retry loop... because the chance of getting a collision is small asf. 
 
