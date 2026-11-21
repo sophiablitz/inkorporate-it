@@ -105,6 +105,18 @@ class GameRoom(
         if (closesNow) onClosed(this)
         //This basically tells the outside of the block "Hey, if you're listening to this, the room is closed!"
     }
+
+    /**
+     * Set everyone's score back to 0, for play_again (#87). Same room, same
+     * players in the same order, just a fresh scoreboard.
+     *
+     * It loops over [joined] inside the lock, so a player joining or leaving
+     * at that moment can't break the loop halfway through.
+     */
+    fun resetScores() = synchronized(this) { //This is a function called resetScores. Right here, it's defining the function and also calling a lock
+        joined.forEach { it.score = 0 } //Here's what the function itself is doing: when a player taps play_again, they stay in the same room, same order, but the score goes back to 0. 
+        //Nothing should be touching joined here. like at all. The lock is to ensure that the server doesn't crash if someone joins in the middle of a reset, changing the list and making it so that the list could loop indefinitely. 
+    }
 }
 
 /**
