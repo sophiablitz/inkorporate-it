@@ -186,4 +186,34 @@ class GameRoomTest {
         assertEquals(listOf(0, 0), room.players.map { it.score })
         assertEquals(listOf(host, ana), room.players)
     }
+
+    // ---------- only the host starts, and not alone (#86) ----------
+
+    @Test
+    fun `only the host is the host`() {
+        val room = GameRoom("123456", host)
+        val ana = PlayerConnection(id = "a", name = "Ana")
+        room.addPlayer(ana)
+
+        assertTrue(room.isHost(host))
+        assertFalse(room.isHost(ana))
+    }
+
+    @Test
+    fun `a copy of the host with the same id and name is not the host`() {
+        val room = GameRoom("123456", host)
+        val copy = PlayerConnection(id = host.id, name = host.name)
+
+        assertFalse(room.isHost(copy))
+    }
+
+    @Test
+    fun `the host alone can't start, but two players can`() {
+        val room = GameRoom("123456", host)
+        assertFalse(room.hasEnoughPlayers)
+
+        room.addPlayer(PlayerConnection(id = "a", name = "Ana"))
+
+        assertTrue(room.hasEnoughPlayers)
+    }
 }
