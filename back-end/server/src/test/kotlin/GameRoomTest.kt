@@ -146,4 +146,28 @@ class GameRoomTest {
 
         assertEquals(1000, ids.toSet().size)
     }
+
+    // ---------- names are cleaned before they're used (#79, #80) ----------
+
+    @Test
+    fun `spaces around a name are dropped`() {
+        assertEquals("Ana", cleanName("  Ana  "))
+    }
+
+    @Test
+    fun `an empty or all-spaces name is turned away`() {
+        assertNull(cleanName(""))
+        assertNull(cleanName("     "))
+    }
+
+    @Test
+    fun `a long name is cut to 16 characters`() {
+        assertEquals("A".repeat(16), cleanName("A".repeat(20)))
+    }
+
+    @Test
+    fun `a cut name doesn't end in a space`() {
+        // "Bartholomew" + 5 spaces is exactly 16, so the cut lands on the spaces.
+        assertEquals("Bartholomew", cleanName("Bartholomew     Jones"))
+    }
 }
