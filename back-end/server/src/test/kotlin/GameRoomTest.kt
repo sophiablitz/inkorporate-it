@@ -170,4 +170,20 @@ class GameRoomTest {
         // "Bartholomew" + 5 spaces is exactly 16, so the cut lands on the spaces.
         assertEquals("Bartholomew", cleanName("Bartholomew     Jones"))
     }
+
+    // ---------- play_again starts the scores over (#87) ----------
+
+    @Test
+    fun `resetScores sets every score back to 0 and keeps the players`() {
+        val room = GameRoom("123456", host)
+        val ana = PlayerConnection(id = "a", name = "Ana")
+        room.addPlayer(ana)
+        host.score = 300
+        ana.score = 150
+
+        room.resetScores()
+
+        assertEquals(listOf(0, 0), room.players.map { it.score })
+        assertEquals(listOf(host, ana), room.players)
+    }
 }
