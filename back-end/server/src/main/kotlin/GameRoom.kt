@@ -17,6 +17,9 @@ private const val MAX_PLAYERS = 8
 // TODO: use MAX_NAME_LENGTH from shared/ once the protocol has it.
 private const val MAX_NAME_LENGTH = 16 //This is just a constant that defined the max name length of all players. Private, so that its untouchable
 
+// TODO: use MIN_PLAYERS_TO_START from shared/ once the protocol has it.
+private const val MIN_PLAYERS_TO_START = 2 //This is also just a constant that defines the minimum players needed to start the game
+
 /**
  * One phone that has joined a room. The server picks [id]; two players can
  * share a [name], so [id] is what tells them apart.
@@ -115,9 +118,32 @@ class GameRoom(
      */
     fun resetScores() = synchronized(this) { //This is a function called resetScores. Right here, it's defining the function and also calling a lock
         joined.forEach { it.score = 0 } //Here's what the function itself is doing: when a player taps play_again, they stay in the same room, same order, but the score goes back to 0. 
-        //Nothing should be touching joined here. like at all. The lock is to ensure that the server doesn't crash if someone joins in the middle of a reset, changing the list and making it so that the list could loop indefinitely. 
+        //Nothing should be touching joined here. like at all. The lock is to ensure that the server doesn't crash if someone joins in the middle of a reset, changing the list and making it so that the list could loop indefinitely.
     }
-}
+
+    /**
+     * True if [player] is this room's host. Only the host may start the game
+     * (#86), so start_game checks this first.
+     *
+     * === means "the very same player", not "a player with the same id and
+     * name". So nobody becomes host by copying the host's details.
+     */
+    fun isHost(player: PlayerConnection): Boolean = player === host // This is a function that basically says: 
+    //Hey, start game (remember push #86?) wants the host to be the one to start the game. 
+    //Start game will send the host's player object to the server, and this function checks if the player object is the same as the host's player object (=== is to check the object content itself, == checks if the id and name match...). If it is, then yes, this player is the host. If not, then no, this player is not the host.
+    //Funilly enough this doesn't even need a lock. Host is always a val, and it doesn't change as of this moment.
+
+    /**
+     * True once the room has at least [MIN_PLAYERS_TO_START] players, so
+     * start_game can begin (#86). A drawing game needs someone to guess.
+     */
+    val hasEnoughPlayers: Boolean
+        get() = synchronized(this) { joined.size >= MIN_PLAYERS_TO_START }
+} 
+    //So we need 2 max players to start. this function gives us that. 
+    //It's a boolean function, locks itself and then basically says 
+    //"Hey, is the joined list size bigger than or equal to 2?"
+    //That's it. 
 
 /**
  * A random room code: exactly [CODE_LENGTH] digits, leading zeros allowed
