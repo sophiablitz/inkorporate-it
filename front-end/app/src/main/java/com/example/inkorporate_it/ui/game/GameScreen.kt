@@ -124,11 +124,11 @@ fun GameScreen(
             GamePhase.RoundOver -> EndOfRoundScreen(state, onContinueGame, modifier, onStubPhase)
 
             GamePhase.GameOver -> EndOfGameScreen(
-                state,
-                onCloseRoom,
-                onGoToLobby,
-                modifier,
-                onStubPhase
+                state = state,
+                onCloseRoom = onCloseRoom,
+                onGoToLobby = onGoToLobby,
+                modifier = modifier,
+                onStubPhase = onStubPhase,
             )
         }
     }
