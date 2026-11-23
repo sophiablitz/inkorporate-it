@@ -38,7 +38,7 @@ fun AvatarBlob(
     avatar: Avatar,
     modifier: Modifier = Modifier,
     size: Dp = 200.dp,
-    onEdit: (() -> Unit)? = null
+    onEdit: ((Avatar) -> Unit)? = null
 ) {
     // Box stacks its children on top of each other.
     Box(modifier = modifier.size(size)) {
@@ -59,12 +59,12 @@ fun AvatarBlob(
                     .background(avatar.inkColor, CircleShape)
             )
         }
-
         // Only show the Edit button when someone passed an onEdit function.
         if (onEdit != null) {
             // A small pill in the theme's secondaryContainer color (yellow in our theme).
             InkButton(
-                onClick = onEdit,
+                // Hands the current avatar to the caller (Home opens the color sheet).
+                onClick = { onEdit(avatar) },
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = inkOnYellow(), // near-black on yellow, in light and dark mode
                 shape = CircleShape,
