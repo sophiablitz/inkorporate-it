@@ -1,37 +1,27 @@
 /*
- * For example use only.
+ * Player cells shared by the Lobby (and other screens).
  */
 
 package com.example.inkorporate_it.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.inkorporate_it.model.Avatar
 import com.example.inkorporate_it.ui.game.GamePlayer
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
-
-@Composable
-fun InkBlob(color: Color, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(48.dp)
-            .background(color, CircleShape),
-    )
-}
 
 @Composable
 fun PlayerEntry(player: GamePlayer, modifier: Modifier = Modifier) {
@@ -40,14 +30,15 @@ fun PlayerEntry(player: GamePlayer, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        InkBlob(color = MaterialTheme.colorScheme.primary)
+        // No onEdit = no Edit button
+        AvatarBlob(avatar = player.avatar, size = 48.dp)
         Text(
             text = player.name,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         if (player.isHost) {
             Text(
@@ -66,26 +57,29 @@ fun PlayerEntry(player: GamePlayer, modifier: Modifier = Modifier) {
     }
 }
 
+/** Simple avatar + username cell, for when you don't have a full GamePlayer. */
 @Composable
-fun Player(username: String, color: Color, modifier: Modifier = Modifier) {
+fun Player(username: String, avatar: Avatar, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(color, CircleShape)
+        AvatarBlob(avatar = avatar, size = 48.dp)
+        Text(
+            text = username,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Text(text = username)
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PlayerPreview() {
-    InkorporateitTheme {
-        Player(username = "Sophia", color = Color.Blue)
+    InkorporateitTheme(dynamicColor = false) {
+        Player(username = "Sophia", avatar = Avatar())
     }
 }
