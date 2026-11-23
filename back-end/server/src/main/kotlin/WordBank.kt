@@ -14,7 +14,7 @@ class WordBank(
     // this parameter has no val/var, is only used for initialization
 ){
     // variables
-    private val availableWords = mutableSetOf<String>()
+    private val availableWords = words.toMutableSet()
     private var currentWord: String? = null
 
     // functions
@@ -35,12 +35,14 @@ class WordBank(
         availableWords.addAll(file.words)
     }
 
+    // fixed null error, the function will return null, if currentWord == null
     fun chooseWord(): String? {
-        currentWord = availableWords.random()
+        currentWord = availableWords.randomOrNull()
         return currentWord
     }
 
-    fun updateList(): MutableSet<String> {
+    // updateList now returns string for read only, so no one else can edit the list
+    fun updateList(): Set<String> {
         // if there is a current word, and it is still available, remove it
         currentWord?.let {
             if (it in availableWords) {
