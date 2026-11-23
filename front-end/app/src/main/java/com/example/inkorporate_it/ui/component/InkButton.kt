@@ -110,6 +110,7 @@ private const val PressHoldMillis = 90L
  * - containerColor / contentColor: fill and text color when enabled
  * - enabled = false: grey fill, light outline, no shadow (theme colors)
  * - shadow: how far down the hard shadow sits (0.dp = none)
+ * - outlineWidth: how thick the dark outline is (InkOutlineWidth unless the caller asks)
  * - onClick runs about 0.18 s after the tap, once the press bounce has played
  *   (instantly if shadow = 0.dp). Extra taps during the bounce are ignored.
  */
@@ -122,6 +123,7 @@ fun InkButton(
     contentColor: Color = MaterialTheme.colorScheme.onBackground,
     shape: Shape = RoundedCornerShape(18.dp),
     shadow: Dp = 5.dp,
+    outlineWidth: Dp = InkOutlineWidth,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
     content: @Composable RowScope.() -> Unit
 ) {
@@ -183,7 +185,7 @@ fun InkButton(
             shape = shape,
             color = fill,
             contentColor = text,
-            border = BorderStroke(InkOutlineWidth, border),
+            border = BorderStroke(outlineWidth, border),
             interactionSource = interactionSource, // so we hear about presses
             // The shadow goes on the outside, so it's added before Surface draws.
             // The button moves down by pressOffset and the shadow shrinks by the same

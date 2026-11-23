@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
@@ -37,6 +38,7 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * - errorText: shown under the field in red (null = no error)
  * - textStyle: the text's style
  * - textAlign: where the text sits; centered unless the caller asks for Start (left)
+ * - outlineWidth: how thick the dark outline is (InkOutlineWidth unless the caller asks)
  */
 @Composable
 fun InkTextField(
@@ -47,6 +49,7 @@ fun InkTextField(
     errorText: String? = null,
     textStyle: TextStyle = MaterialTheme.typography.titleMedium,
     textAlign: TextAlign = TextAlign.Center,
+    outlineWidth: Dp = InkOutlineWidth,
     shape: Shape = RoundedCornerShape(18.dp),
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
@@ -117,8 +120,8 @@ fun InkTextField(
                         interactionSource = interactionSource,
                         colors = fieldColors,
                         shape = shape,
-                        focusedBorderThickness = 3.dp,          // a bit thicker while typing
-                        unfocusedBorderThickness = InkOutlineWidth
+                        focusedBorderThickness = outlineWidth + 0.5.dp, // a bit thicker while typing
+                        unfocusedBorderThickness = outlineWidth
                     )
                 }
             )

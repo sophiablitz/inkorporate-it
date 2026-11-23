@@ -245,7 +245,8 @@ fun HomeScreen(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                                 shape = RoundedCornerShape(20.dp),
-                                shadow = 6.dp
+                                shadow = 6.dp,
+                                outlineWidth = BottomOutlineWidth
                             ) {
                                 Text(
                                     text = "Create game", // wraps to two lines at this width
@@ -267,6 +268,7 @@ fun HomeScreen(
                                     // filterJoinCode drops letters and stops at 6 digits.
                                     onValueChange = { typed -> joinCode = filterJoinCode(typed) },
                                     placeholder = "Code",
+                                    outlineWidth = BottomOutlineWidth,
                                     errorText = joinError, // red outline + message when joining failed
                                     // Spaced-out digits, like the design.
                                     textStyle = MaterialTheme.typography.titleMedium.copy(letterSpacing = 4.sp),
@@ -292,6 +294,7 @@ fun HomeScreen(
                                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = inkOnYellow(), // near-black, in light and dark mode
                                     shadow = 4.dp,
+                                    outlineWidth = BottomOutlineWidth,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text("Join game")
@@ -303,6 +306,7 @@ fun HomeScreen(
                     // 7. Free Draw: full-width white button with a pencil icon.
                     InkButton(
                         onClick = onFreeDraw,
+                        outlineWidth = BottomOutlineWidth,
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -322,6 +326,10 @@ fun HomeScreen(
 
 // Widest Home's content gets. Phones are narrower, so this only matters on the unfolded Fold and tablets.
 private val MaxContentWidth = 420.dp
+
+// Outlines in the bottom half (name, code, Create game, Join, Free Draw) are a bit thicker
+// than the top half's (InkOutlineWidth, 2.5dp), from #166.
+private val BottomOutlineWidth = 3.5.dp
 
 /*
  * The theme's text styles, all one step bolder (SemiBold), for Home only.
@@ -416,6 +424,7 @@ private fun NameField(
         shape = RoundedCornerShape(18.dp),
         textStyle = MaterialTheme.typography.titleLarge,
         textAlign = TextAlign.Start, // name on the left, pencil on the right (#166)
+        outlineWidth = BottomOutlineWidth,
         // Small grey pencil on the right, a hint that the name can be changed.
         trailingIcon = {
             Icon(
