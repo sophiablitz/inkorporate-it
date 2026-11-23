@@ -65,12 +65,12 @@ fun PodiumPlace(
 
     // `when` picks one value for each case, like a switch statement.
     val blockColor = when (place) {
-        1 -> colors.secondaryContainer      // yellow
-        2 -> colors.surfaceContainerLowest  // white
-        else -> colors.surfaceContainerHigh // light lilac
+        1 -> colors.secondaryContainer // gold: the theme's yellow
+        2 -> PodiumSilver
+        else -> PodiumBronze
     }
-    // Text on the yellow block stays near-black, also in dark mode.
-    val numberColor = if (place == 1) inkOnYellow() else colors.onSurface
+    // All three blocks are light in both modes, so the number stays near-black, also in dark mode.
+    val numberColor = inkOnYellow()
     val numberSize = when (place) {
         1 -> 40.sp
         2 -> 32.sp
@@ -115,6 +115,14 @@ fun PodiumPlace(
         }
     }
 }
+
+/*
+ * Medal colors for the 2nd and 3rd place blocks (1st uses the theme's yellow as gold).
+ * The theme has no silver or bronze, so they're fixed here, like the blob colors:
+ * the same in light and dark mode, just like the yellow.
+ */
+private val PodiumSilver = Color(0xFFCDD3DC)
+private val PodiumBronze = Color(0xFFE0A86E)
 
 /*
  * The theme's Sniglet at a given size, with fake bold (SemiBold).
