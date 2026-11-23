@@ -173,7 +173,7 @@ fun HomeScreen(
                     InkButton(
                         onClick = onSettings,
                         shape = RoundedCornerShape(15.dp),
-                        shadow = 3.dp,
+                        shadow = 4.dp, // 4-5dp shadows on Home's buttons (#166)
                         contentPadding = PaddingValues(0.dp),
                         modifier = Modifier.size(46.dp)
                     ) {
@@ -245,7 +245,7 @@ fun HomeScreen(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                                 shape = RoundedCornerShape(20.dp),
-                                shadow = 6.dp,
+                                shadow = 5.dp,
                                 outlineWidth = BottomOutlineWidth
                             ) {
                                 Text(
