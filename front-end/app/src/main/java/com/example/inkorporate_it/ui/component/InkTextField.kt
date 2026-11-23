@@ -35,7 +35,8 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * set the outline thickness. Error, placeholder and icons work the same.
  *
  * - errorText: shown under the field in red (null = no error)
- * - textStyle: the text's style; the text is always centered
+ * - textStyle: the text's style
+ * - textAlign: where the text sits; centered unless the caller asks for Start (left)
  */
 @Composable
 fun InkTextField(
@@ -45,6 +46,7 @@ fun InkTextField(
     placeholder: String = "",
     errorText: String? = null,
     textStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    textAlign: TextAlign = TextAlign.Center,
     shape: Shape = RoundedCornerShape(18.dp),
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
@@ -65,15 +67,15 @@ fun InkTextField(
         unfocusedPlaceholderColor = colors.outline,
         focusedPlaceholderColor = colors.outline
     )
-    // Centered text in the theme's onBackground color.
-    val centeredStyle = textStyle.copy(color = colors.onBackground, textAlign = TextAlign.Center)
+    // The text in the theme's onBackground color, lined up as asked (centered by default).
+    val alignedStyle = textStyle.copy(color = colors.onBackground, textAlign = textAlign)
 
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
         singleLine = true,
-        textStyle = centeredStyle,
+        textStyle = alignedStyle,
         cursorBrush = SolidColor(colors.primary),
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
@@ -92,14 +94,15 @@ fun InkTextField(
                     // Same style as the text, but grey (outline) so it reads as a hint.
                     Text(
                         text = placeholder,
-                        style = centeredStyle.copy(color = colors.outline),
+                        style = alignedStyle.copy(color = colors.outline),
                         modifier = Modifier.fillMaxWidth()
                     )
                 },
-                // With an icon on the right, the text is centered in the space left over,
+                // With an icon on the right, centered text is centered in the space left over,
                 // so it looks pushed to the left. An empty slot of the same size on the
                 // left (both icon slots are 48dp wide) puts the text back in the middle.
-                leadingIcon = if (trailingIcon != null) {
+                // Left-aligned text doesn't need it.
+                leadingIcon = if (trailingIcon != null && textAlign == TextAlign.Center) {
                     { Spacer(modifier = Modifier.size(24.dp)) }
                 } else {
                     null

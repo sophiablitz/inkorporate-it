@@ -213,10 +213,10 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 4. Name.
+                    // 4. Name. Label and name both on the left, lined up with "or with a code" below.
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         Text(
                             text = "Name",
@@ -414,6 +414,7 @@ private fun NameField(
         placeholder = "Your name",
         shape = CircleShape, // pill shape
         textStyle = MaterialTheme.typography.titleLarge,
+        textAlign = TextAlign.Start, // name on the left, pencil on the right (#166)
         // Small grey pencil on the right, a hint that the name can be changed.
         trailingIcon = {
             Icon(
