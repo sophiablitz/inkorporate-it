@@ -1,5 +1,6 @@
 package com.example.inkorporate_it.data.network
 
+import it.inkorporate.protocol.CounterClientMessage
 import it.inkorporate.protocol.CounterServerMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -10,8 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * GameClient on a FakeGameSocket: the menu and the JSON are the real code, only the
- * network is pretend. These check the exact JSON that would go over the wire.
+ * GameClient on a FakeGameSocket: the menu is the real code, only the network is
+ * pretend. The JSON for these messages is tested in shared/ (CounterExampleTest).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class GameClientTest {
@@ -26,17 +27,17 @@ class GameClientTest {
     }
 
     @Test
-    fun incrementSendsTheAgreedJson() = runTest {
+    fun incrementSendsCounterIncrement() = runTest {
         client.connect()
         client.increment()
-        assertEquals(listOf("""{"type":"counter_increment"}"""), socket.sent)
+        assertEquals(listOf(CounterClientMessage.CounterIncrement), socket.sent)
     }
 
     @Test
     fun refreshSendsCounterGet() = runTest {
         client.connect()
         client.refresh()
-        assertEquals(listOf("""{"type":"counter_get"}"""), socket.sent)
+        assertEquals(listOf(CounterClientMessage.CounterGet), socket.sent)
     }
 
     @Test
@@ -52,21 +53,8 @@ class GameClientTest {
             client.events.collect { received += it }
         }
 
-        socket.serverSends("""{"type":"counter_value","value":4}""")
+        socket.serverSends(CounterServerMessage.CounterValue(4))
 
         assertEquals(listOf(CounterServerMessage.CounterValue(4)), received)
-    }
-
-    @Test
-    fun aBrokenMessageFromTheServerIsSkipped() = runTest {
-        val received = mutableListOf<CounterServerMessage>()
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            client.events.collect { received += it }
-        }
-
-        socket.serverSends("not json at all")
-        socket.serverSends("""{"type":"counter_value","value":5}""")
-
-        assertEquals(listOf(CounterServerMessage.CounterValue(5)), received)
     }
 }

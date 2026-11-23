@@ -3,6 +3,8 @@ package com.example.inkorporate_it.ui.servertest
 import com.example.inkorporate_it.data.network.ConnectionStatus
 import com.example.inkorporate_it.data.network.FakeGameSocket
 import com.example.inkorporate_it.data.network.GameClient
+import it.inkorporate.protocol.CounterClientMessage
+import it.inkorporate.protocol.CounterServerMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -25,9 +27,9 @@ class CounterViewModelTest {
     private val socket = FakeGameSocket()
     private val client = GameClient(socket)
 
-    private val increment = """{"type":"counter_increment"}"""
-    private val get = """{"type":"counter_get"}"""
-    private fun value(n: Int) = """{"type":"counter_value","value":$n}"""
+    private val increment = CounterClientMessage.CounterIncrement
+    private val get = CounterClientMessage.CounterGet
+    private fun value(n: Int) = CounterServerMessage.CounterValue(n)
 
     // viewModelScope runs on Android's main thread. Tests have none, so stand one in.
     @Before
