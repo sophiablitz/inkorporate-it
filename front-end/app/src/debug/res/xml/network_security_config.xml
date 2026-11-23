@@ -4,7 +4,8 @@
   running the emulator, so we can test against a local server.
   Every other address still needs a secure connection.
   Debug builds only (app/src/debug), so a release build can never allow ws://.
-  Remove this once the app uses wss:// (#151).
+  Needed when server.local=true in local.properties points the app at your own
+  computer. The Render server uses wss://, which never needs this.
 -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">

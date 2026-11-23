@@ -1,6 +1,7 @@
 package com.example.inkorporate_it.data.network
 
 import android.util.Log
+import com.example.inkorporate_it.BuildConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -29,7 +30,8 @@ import kotlinx.coroutines.launch
  * and go. InkorporateApp keeps the one instance for as long as the app runs.
  */
 class KtorGameSocket(
-    private val url: String = SERVER_URL,
+    // Render, or your own computer with server.local=true in local.properties (see app/build.gradle.kts).
+    private val url: String = BuildConfig.SERVER_URL,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : GameSocket {
 
@@ -92,8 +94,5 @@ class KtorGameSocket(
 
     private companion object {
         const val TAG = "KtorGameSocket"
-
-        // 10.0.2.2 is the computer running the emulator. Becomes wss:// in #151.
-        const val SERVER_URL = "ws://10.0.2.2:8080/ws"
     }
 }
