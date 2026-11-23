@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -39,20 +42,52 @@ import androidx.compose.ui.unit.dp
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 import kotlin.math.ceil
 
-/** Grey scrim; fixed (not themed) so the white text is readable in light and dark mode. */
-private val ScrimColor = Color(0xFF424242).copy(alpha = 0.92f)
+/** Grey card color; fixed (not themed) so the white text is readable in light and dark mode. */
+private val CardColor = Color(0xFF424242).copy(alpha = 0.92f)
+
+// ---------------------------------------------------------------------------
+// Public overlays
+// ---------------------------------------------------------------------------
 
 /**
- * Full-size grey overlay that tells the drawer which word to draw, with a countdown.
+ * Picks the right overlay for the start of a turn:
+ * the drawer sees their word, everyone else sees that the drawer is getting theirs.
  *
- * Put it on top of the screen content (inside a Box). It appears as soon as it is composed,
- * counts down from [durationSeconds], then calls [onFinished] so the caller can remove it.
- * While it is showing it swallows taps, but the drawing canvas should also be switched off
- * with `isDrawing = false` so no ink can be started underneath.
+ * Drive it from `GameUiState.isMyTurnToDraw`.
  *
- * @param word the word the user must draw.
- * @param durationSeconds how long the overlay stays (default 2).
- * @param onFinished called once when the countdown reaches zero.
+ * @param isMyTurnToDraw true for the drawer, false for guessers.
+ * @param word the word to draw. Only used (and only shown) when [isMyTurnToDraw] is true.
+ * @param drawerName optional name of the drawer, shown to guessers instead of "The drawer".
+ */
+@Composable
+fun TurnIntroOverlay(
+    isMyTurnToDraw: Boolean,
+    word: String,
+    modifier: Modifier = Modifier,
+    drawerName: String? = null,
+    durationSeconds: Int = 2,
+    onFinished: () -> Unit = {}
+) {
+    if (isMyTurnToDraw) {
+        WordRevealOverlay(
+            word = word,
+            modifier = modifier,
+            durationSeconds = durationSeconds,
+            onFinished = onFinished
+        )
+    } else {
+        DrawerGettingWordOverlay(
+            modifier = modifier,
+            drawerName = drawerName,
+            durationSeconds = durationSeconds,
+            onFinished = onFinished
+        )
+    }
+}
+
+/**
+ * For the drawer: tells them which word to draw, with a countdown.
+ * Shows as soon as it is composed and calls [onFinished] once when time is up.
  */
 @Composable
 fun WordRevealOverlay(
@@ -61,12 +96,60 @@ fun WordRevealOverlay(
     durationSeconds: Int = 2,
     onFinished: () -> Unit = {}
 ) {
+    CountdownCard(
+        title = "Your word to draw is",
+        headline = word,
+        modifier = modifier,
+        durationSeconds = durationSeconds,
+        onFinished = onFinished
+    )
+}
+
+/**
+ * For guessers (isMyTurnToDraw == false): says the drawer is getting their word,
+ * with the same countdown. The word itself is never passed in, so it can't leak.
+ *
+ * @param drawerName shown instead of "The drawer" when you know who is drawing.
+ */
+@Composable
+fun DrawerGettingWordOverlay(
+    modifier: Modifier = Modifier,
+    drawerName: String? = null,
+    durationSeconds: Int = 2,
+    onFinished: () -> Unit = {}
+) {
+    CountdownCard(
+        title = "${drawerName ?: "The drawer"} is getting their word",
+        headline = null,
+        modifier = modifier,
+        durationSeconds = durationSeconds,
+        onFinished = onFinished
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Shared card
+// ---------------------------------------------------------------------------
+
+/**
+ * Smaller rounded grey card with a countdown ring. Sits in the middle of a full-size,
+ * invisible layer that swallows taps. While it shows, also pass `isDrawing = false` to
+ * DrawingCanvas so no ink can be started underneath.
+ */
+@Composable
+private fun CountdownCard(
+    title: String,
+    headline: String?,
+    modifier: Modifier,
+    durationSeconds: Int,
+    onFinished: () -> Unit
+) {
     val currentOnFinished by rememberUpdatedState(onFinished)
 
     // 1f = full time left, 0f = time is up. Drives both the ring and the number.
     val progress = remember { Animatable(1f) }
 
-    LaunchedEffect(word, durationSeconds) {
+    LaunchedEffect(title, headline, durationSeconds) {
         progress.snapTo(1f)
         progress.animateTo(
             targetValue = 0f,
@@ -81,8 +164,7 @@ fun WordRevealOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(ScrimColor)
-            // Swallow taps so nothing underneath reacts while the overlay is up.
+            // Invisible full-size layer: swallows taps so nothing underneath reacts.
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -92,28 +174,37 @@ fun WordRevealOverlay(
     ) {
         Column(
             modifier = Modifier
-                .padding(24.dp)
+                .fillMaxWidth(0.75f)
+                .clip(RoundedCornerShape(28.dp))
+                .background(CardColor)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
                 .semantics(mergeDescendants = true) {
                     liveRegion = LiveRegionMode.Polite
-                    contentDescription = "Your word to draw is $word. $secondsLeft seconds left."
+                    contentDescription = buildString {
+                        append(title)
+                        if (headline != null) append(" $headline")
+                        append(". $secondsLeft seconds left.")
+                    }
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Your word to draw is",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center
             )
 
-            Text(
-                text = word,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
+            if (headline != null) {
+                Text(
+                    text = headline,
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             // Countdown ring with the seconds left in the middle.
             Box(
@@ -158,11 +249,24 @@ fun WordRevealOverlay(
     }
 }
 
-@Preview(name = "Light", showBackground = true)
-@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+// ---------------------------------------------------------------------------
+// Previews
+// ---------------------------------------------------------------------------
+
+@Preview(name = "Drawer - Light", showBackground = true)
+@Preview(name = "Drawer - Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun WordRevealOverlayPreview() {
     InkorporateitTheme {
-        WordRevealOverlay(word = "tree", durationSeconds = 60)
+        TurnIntroOverlay(isMyTurnToDraw = true, word = "tree", durationSeconds = 60)
+    }
+}
+
+@Preview(name = "Guesser - Light", showBackground = true)
+@Preview(name = "Guesser - Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun DrawerGettingWordOverlayPreview() {
+    InkorporateitTheme {
+        TurnIntroOverlay(isMyTurnToDraw = false, word = "", durationSeconds = 60)
     }
 }
