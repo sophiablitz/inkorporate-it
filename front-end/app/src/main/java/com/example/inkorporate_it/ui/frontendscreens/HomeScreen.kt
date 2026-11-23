@@ -54,16 +54,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import com.example.inkorporate_it.R
-import com.example.inkorporate_it.model.Player
-import com.example.inkorporate_it.model.cleanName
-import com.example.inkorporate_it.model.filterJoinCode
-import com.example.inkorporate_it.model.isJoinCodeComplete
+import com.example.inkorporate_it.model.Avatar
 import com.example.inkorporate_it.ui.component.AvatarBlob
 import com.example.inkorporate_it.ui.component.InkButton
 import com.example.inkorporate_it.ui.component.InkTextField
 import com.example.inkorporate_it.ui.component.dotGrid
 import com.example.inkorporate_it.ui.component.inkOnYellow
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
+import com.example.inkorporate_it.ui.theme.extraBoldFontFamily
 
 /*
  * The Home screen. Three sections, top to bottom (#166):
@@ -74,17 +72,19 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * The caller passes the player in and gets told what happened through the
  * on... functions. Navigation is UNDECIDED, so the caller wires these later.
  *
- * - player / onPlayerChange: the current player, and how to save a new name
+ * - username / onUsernameChange: the player's name, and how to save a new one
+ * - avatar / onAvatarChange: the player's blob, and how to save a new one
  * - joinError: text to show under the code field when joining failed (null = no error)
- * - onSettings, onEditAvatar, onCreateGame, onFreeDraw: button taps
+ * - onSettings, onCreateGame, onFreeDraw: button taps
  * - onJoinGame: Join tapped with a complete 6-digit code
  */
 @Composable
 fun HomeScreen(
-    player: Player,
-    onPlayerChange: (Player) -> Unit,
+    username: String,
+    avatar: Avatar,
+    onUsernameChange: (String) -> Unit,
+    onAvatarChange: (Avatar) -> Unit,
     onSettings: () -> Unit,
-    onEditAvatar: () -> Unit,
     onCreateGame: () -> Unit,
     onJoinGame: (code: String) -> Unit,
     onFreeDraw: () -> Unit,
@@ -140,21 +140,28 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Title: "inkorporate" plus ".it" in the theme's primary color.
-                    // ExtraBold is FAKED: Type.kt only loads Sniglet Regular, so Android draws it thicker.
+                    // Title: "inkorporate" in Sniglet Regular (with Home's usual fake bold),
+                    // then ".it" in the real Sniglet ExtraBold font and the theme's primary color.
+                    // buildAnnotatedString = one piece of text where parts can have their own style.
+                    // SpanStyle = the style for the part inside withStyle { }.
                     // weight(1f): the title takes all the width the settings button doesn't.
                     // autoSize: starts at displayMedium (45sp) and steps down until it fits on one
                     // line, so it doesn't wrap on narrow phones.
                     Text(
                         text = buildAnnotatedString {
                             append("inkorporate")
-                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            withStyle(
+                                SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontFamily = extraBoldFontFamily, // the bundled ExtraBold file (Type.kt)
+                                    fontWeight = FontWeight.ExtraBold // matches that file, so nothing is faked
+                                )
+                            ) {
                                 append(".it")
                             }
                         },
                         style = MaterialTheme.typography.displayMedium,
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                         autoSize = TextAutoSize.StepBased(
                             minFontSize = 24.sp,
@@ -180,7 +187,7 @@ fun HomeScreen(
                 }
 
                 // 2. Avatar (35%): the biggest square that fits, so the blob grows and
-                // shrinks with the screen. The Edit button opens the avatar editor stub.
+                // shrinks with the screen. Edit is Sophia's placeholder for now (see AvatarBlob).
                 BoxWithConstraints(
                     modifier = Modifier
                         .weight(35f)
@@ -190,7 +197,7 @@ fun HomeScreen(
                     // min(): the smaller of this section's width and height.
                     // Minus 16dp so the blob's shadow and the Edit pill stay inside the section.
                     val blobSize = (min(maxWidth, maxHeight) - 16.dp).coerceAtLeast(0.dp)
-                    AvatarBlob(avatar = player.avatar, onEdit = onEditAvatar, size = blobSize)
+                    AvatarBlob(avatar = avatar, onEdit = {onAvatarChange}, size = blobSize)
                 }
 
                 // 3. Bottom (at least 50%): name, Create / Join, Free Draw.
@@ -206,7 +213,7 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 4. Name. copy() makes a new Player with only the username changed.
+                    // 4. Name.
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -218,8 +225,8 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         NameField(
-                            name = player.username,
-                            onNameChange = { newName -> onPlayerChange(player.copy(username = newName)) },
+                            name = username,
+                            onNameChange = onUsernameChange,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -433,6 +440,37 @@ private fun NameField(
     )
 }
 
+
+// Longest name allowed, from the Home screen spec.
+private const val MAX_NAME_LENGTH = 16
+
+// Join codes are exactly this many digits.
+private const val JOIN_CODE_LENGTH = 6
+
+/*
+ * Cleans up a name after the player finishes editing it.
+ * - trim() removes spaces at the start and end
+ * - take(16) keeps at most 16 characters
+ * - if nothing is left, the old name comes back
+ */
+internal fun cleanName(newName: String, oldName: String): String {
+    val cleaned = newName.trim().take(MAX_NAME_LENGTH)
+    return if (cleaned.isEmpty()) oldName else cleaned
+}
+
+/*
+ * Keeps only digits and stops at 6 of them.
+ * Used on every keystroke in the join code field, so letters never appear.
+ */
+internal fun filterJoinCode(input: String): String {
+    return input.filter { it.isDigit() }.take(JOIN_CODE_LENGTH)
+}
+
+// True when the code is exactly 6 digits, so the Join button can be enabled.
+internal fun isJoinCodeComplete(code: String): Boolean {
+    return code.length == JOIN_CODE_LENGTH && code.all { it.isDigit() }
+}
+
 // --- Previews (dynamicColor = false shows the team's colors, not wallpaper colors) ---
 
 @Preview(showBackground = true, name = "Home, light")
@@ -441,13 +479,14 @@ fun HomeScreenPreview() {
     InkorporateitTheme(dynamicColor = false) {
         Surface { // Surface paints the theme's background color behind the screen
             HomeScreen(
-                player = Player(username = "Alejandro"),
-                onPlayerChange = {},
+                username = "Alejandro",
+                avatar = Avatar(),
+                onUsernameChange = {},
                 onSettings = {},
-                onEditAvatar = {},
+                onAvatarChange = {},
                 onCreateGame = {},
                 onJoinGame = {},
-                onFreeDraw = {}
+                onFreeDraw = {},
             )
         }
     }
@@ -459,10 +498,11 @@ fun HomeScreenDarkPreview() {
     InkorporateitTheme(dynamicColor = false) {
         Surface {
             HomeScreen(
-                player = Player(username = "Jerry"),
-                onPlayerChange = {},
+                username = "Jerry",
+                avatar = Avatar(),
+                onUsernameChange = {},
                 onSettings = {},
-                onEditAvatar = {},
+                onAvatarChange = {},
                 onCreateGame = {},
                 onJoinGame = {},
                 onFreeDraw = {}
@@ -477,14 +517,15 @@ fun HomeScreenJoinErrorPreview() {
     InkorporateitTheme(dynamicColor = false) {
         Surface {
             HomeScreen(
-                player = Player(username = "Jorge"),
-                onPlayerChange = {},
+                username = "Jerry",
+                avatar = Avatar(),
+                onUsernameChange = {},
                 onSettings = {},
-                onEditAvatar = {},
+                onAvatarChange = {},
                 onCreateGame = {},
                 onJoinGame = {},
                 onFreeDraw = {},
-                joinError = "Room not found"
+                joinError = "Room not found",
             )
         }
     }
