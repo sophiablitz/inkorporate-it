@@ -1,4 +1,4 @@
-The crown on the End of Game screen (ui/component/PodiumPlace.kt) is drawn from the
+The crown on the End of Game screen (ui/game/EndOfGame.kt) is drawn from the
 "crown" icon of Lucide (https://lucide.dev), under this license:
 
 ISC License

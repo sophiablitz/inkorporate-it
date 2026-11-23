@@ -1,6 +1,9 @@
 package com.example.inkorporate_it.ui.game
 
 import android.content.res.Configuration
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,16 +15,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,10 +47,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.inkorporate_it.model.Avatar
+import com.example.inkorporate_it.ui.component.AvatarBlob
 import com.example.inkorporate_it.ui.component.InkButton
-import com.example.inkorporate_it.ui.component.PodiumPlace
 import com.example.inkorporate_it.ui.component.ResultRow
 import com.example.inkorporate_it.ui.component.dotGrid
+import com.example.inkorporate_it.ui.component.hardShadow
+import com.example.inkorporate_it.ui.component.inkOnYellow
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
 /*
@@ -258,6 +274,125 @@ private fun OtherPlayers(
     }
 }
 
+/*
+ * One place on the podium, top to bottom:
+ * crown (1st place only), blob, name, score, and a block with the place number.
+ * Private: only this screen uses it. (ResultRow is in ui/component/ because
+ * End of Round may reuse it.)
+ *
+ * Podium() works out blobSize and blockHeight from the space it has,
+ * so this only draws what it's told.
+ *
+ * - place: 1, 2 or 3. Picks the block color, the text sizes and the crown.
+ * - textScale: makes all text a bit smaller or bigger (0.9 on short phones, 1.05 on tall ones).
+ */
+@Composable
+private fun PodiumPlace(
+    name: String,
+    score: Int,
+    avatar: Avatar,
+    place: Int,
+    blobSize: Dp,
+    blockHeight: Dp,
+    modifier: Modifier = Modifier,
+    textScale: Float = 1f,
+) {
+    val colors = MaterialTheme.colorScheme
+    val isWinner = place == 1
+
+    // `when` picks one value for each case, like a switch statement.
+    val blockColor = when (place) {
+        1 -> colors.secondaryContainer // gold: the theme's yellow
+        2 -> PodiumSilver
+        else -> PodiumBronze
+    }
+    // All three blocks are light in both modes, so the number stays near-black, also in dark mode.
+    val numberColor = inkOnYellow()
+    val numberSize = when (place) {
+        1 -> 40.sp
+        2 -> 32.sp
+        else -> 28.sp
+    } * textScale
+    val nameSize = (if (isWinner) 19.sp else 17.sp) * textScale
+    val scoreSize = (if (isWinner) 16.sp else 15.sp) * textScale
+    val blockShape = RoundedCornerShape(18.dp)
+
+    // mergeDescendants: a screen reader reads the whole place as one item ("Mia, 1240, 1").
+    Column(
+        modifier = modifier.semantics(mergeDescendants = true) {},
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (isWinner) {
+            Crown(Modifier.size(26.dp * textScale))
+            Spacer(Modifier.height(4.dp))
+        }
+        AvatarBlob(avatar = avatar, size = blobSize) // no onEdit, so no Edit button
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = name,
+            style = semiBold(nameSize),
+            color = colors.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis, // long names end in "…"
+        )
+        Text(text = score.toString(), style = semiBold(scoreSize), color = colors.onSurface)
+        Spacer(Modifier.height(6.dp))
+
+        // The block. Order matters: shadow first (behind), then fill, then outline on top.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(blockHeight)
+                .hardShadow(blockShape, colors.onSurface, offset = 4.dp)
+                .background(blockColor, blockShape)
+                .border(3.5.dp, colors.onSurface, blockShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text = place.toString(), style = semiBold(numberSize), color = numberColor)
+        }
+    }
+}
+
+/*
+ * Medal colors for the 2nd and 3rd place blocks (1st uses the theme's yellow as gold).
+ * The theme has no silver or bronze, so they're fixed here, like the blob colors:
+ * the same in light and dark mode, just like the yellow.
+ */
+private val PodiumSilver = Color(0xFFCDD3DC)
+private val PodiumBronze = Color(0xFFE0A86E)
+
+/*
+ * The crown over 1st place, drawn from two SVG paths (no icon library).
+ * Paths from the Lucide icon set ("crown"), ISC license: assets/licenses/Lucide-ISC.txt.
+ * The paths are drawn in a 24 x 24 space, then scaled to the crown's real size.
+ */
+private const val CrownShapePath =
+    "M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 " +
+        ".798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 " +
+        ".798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"
+private const val CrownBasePath = "M5 21h14"
+
+@Composable
+private fun Crown(modifier: Modifier = Modifier) {
+    // Turn the path text into drawable shapes once, the first time the crown is drawn.
+    // remember keeps them for later redraws. (Building them when the file loads would
+    // break the unit tests: they run without Android, and a Path needs Android.)
+    val crownShape = remember { PathParser().parsePathString(CrownShapePath).toPath() }
+    val crownBase = remember { PathParser().parsePathString(CrownBasePath).toPath() }
+    val fill = MaterialTheme.colorScheme.secondaryContainer
+    val outline = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier) {
+        // 2 units wide in the 24-unit space, with round ends and corners.
+        val line = Stroke(width = 2f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        // scale() stretches everything inside it (lines too) from 24 units to the real size.
+        scale(size.width / 24f, pivot = Offset.Zero) {
+            drawPath(crownShape, fill)                  // yellow inside
+            drawPath(crownShape, outline, style = line) // dark outline
+            drawPath(crownBase, outline, style = line)  // the line under the crown
+        }
+    }
+}
+
 /* The theme's Sniglet at a given size, with fake bold (SemiBold, no ExtraBold on this screen). */
 @Composable
 private fun semiBold(size: TextUnit): TextStyle =
@@ -283,7 +418,30 @@ val previewFinalPlayers = listOf(
     GamePlayer(name = "Eli", score = 150, avatar = Avatar(inkColor = Color(0xFFFCD365))),    // yellow
 )
 
-// --- Previews at the 5 mockup sizes (dynamicColor = false shows the team's colors) ---
+// --- Previews (dynamicColor = false shows the team's colors, not wallpaper colors) ---
+
+// Just the podium places, side by side: Sam (2nd), Mia (1st), Leo (3rd).
+@Preview(showBackground = true, name = "Podium places 2, 1, 3")
+@Composable
+private fun PodiumPlacePreview() {
+    InkorporateitTheme(dynamicColor = false) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            val (mia, sam, leo) = previewFinalPlayers // the first three, highest score first
+            PodiumPlace(sam.name, sam.score, sam.avatar, place = 2,
+                blobSize = 64.dp, blockHeight = 50.dp, modifier = Modifier.width(96.dp))
+            PodiumPlace(mia.name, mia.score, mia.avatar, place = 1,
+                blobSize = 80.dp, blockHeight = 70.dp, modifier = Modifier.width(96.dp))
+            PodiumPlace(leo.name, leo.score, leo.avatar, place = 3,
+                blobSize = 64.dp, blockHeight = 38.dp, modifier = Modifier.width(96.dp))
+        }
+    }
+}
+
+// The whole screen at the 5 mockup sizes, plus dark mode.
 
 @Composable
 private fun EndOfGamePreview() {
