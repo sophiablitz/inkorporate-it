@@ -12,6 +12,9 @@ composeBom = "2026.02.01"
 logback = "1.6.3"
 # The version Ktor 3.6.1 already uses, so the build only ever has one copy.
 kotlinx-serialization = "1.11.0"
+inkAuthoringCompose = "1.0.0"
+inkBrushCompose = "1.0.0"
+inkRendering = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +36,11 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+androidx-ink-authoring-compose = { group = "androidx.ink", name = "ink-authoring-compose", version.ref = "inkAuthoringCompose" }
+androidx-ink-brush-compose = { group = "androidx.ink", name = "ink-brush-compose", version.ref = "inkBrushCompose" }
+androidx-ink-rendering = { group = "androidx.ink", name = "ink-rendering", version.ref = "inkRendering" }
+androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
