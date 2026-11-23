@@ -2,7 +2,6 @@ package com.example.inkorporate_it
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -16,26 +15,52 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.inkorporate_it.model.PlayerSaver
-import com.example.inkorporate_it.model.randomDefaultPlayer
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.example.inkorporate_it.model.Avatar
+import com.example.inkorporate_it.model.AvatarSaver
 import com.example.inkorporate_it.ui.frontendscreens.HomeScreen
+import com.example.inkorporate_it.ui.game.GameScreen
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
+import kotlinx.serialization.Serializable
+import kotlin.random.Random
 
 /*
- * TEMPORARY screen switch.
- * Navigation is UNDECIDED (Ismael's area). Until it exists, this enum and the
- * `when` below decide which screen shows. Lobby, Edit avatar, Settings and
- * Free Draw are empty placeholders. Replace all of this when the real navigation lands.
+ * The app's screens, as type-safe Navigation Compose routes.
+ * @Serializable lets Navigation Compose turn each one into a destination.
+ *
+ * Game carries the join code: null = create a new game, a 6-digit code = join that game.
+ * The code stays a String so a leading 0 ("012345") is kept.
  */
-enum class Screen { Home, Lobby, EditAvatar, Settings, FreeDraw }
+@Serializable
+sealed interface AppRoute {
+    @Serializable
+    data object Home : AppRoute
+
+    @Serializable
+    data class Game(val code: String? = null) : AppRoute
+    @Serializable
+    data object Settings : AppRoute
+
+    @Serializable
+    data object FreeDraw : AppRoute
+}
 
 class MainActivity : ComponentActivity() {
+    // Names picked at random on first launch. Add more team names here.
+    private val DefaultNames = listOf("Alejandro", "Jerry", "Jorge", "Ismael")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // TEMPORARY (#141): connect to the local server when the app starts.
@@ -46,60 +71,77 @@ class MainActivity : ComponentActivity() {
             // dynamicColor = false: use the team's Material Theme Builder colors,
             // not the phone's wallpaper colors (Theme.kt defaults to wallpaper colors).
             InkorporateitTheme(dynamicColor = false) {
-                // Which screen is showing. Starts on Home.
-                var screen by rememberSaveable { mutableStateOf(Screen.Home) }
+                // Remembers which screens are open (the back stack) and moves between them.
+                val navController = rememberNavController()
 
                 // The player, kept in memory only (how to save it is not decided).
                 // First launch gets a random team name and the default blob.
                 // rememberSaveable + PlayerSaver keep the player when the phone rotates,
                 // or dark mode / font size changes. Closing the app still forgets it.
-                var player by rememberSaveable(stateSaver = PlayerSaver) {
-                    mutableStateOf(randomDefaultPlayer())
+                var avatar by rememberSaveable(stateSaver = AvatarSaver) {
+                    mutableStateOf(Avatar())
                 }
-
-                // The phone's Back gesture returns to Home from any placeholder.
-                BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
+                var username by rememberSaveable { mutableStateOf(randomDefaultUsername()) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     // innerPadding keeps content clear of the status and navigation bars.
-                    val contentModifier = Modifier.padding(innerPadding)
-
-                    when (screen) {
-                        Screen.Home -> HomeScreen(
-                            player = player,
-                            onPlayerChange = { newPlayer -> player = newPlayer },
-                            onSettings = { screen = Screen.Settings },
-                            onEditAvatar = { screen = Screen.EditAvatar },
-                            onCreateGame = { screen = Screen.Lobby },
-                            // STUB: the real join call is UNDECIDED. Always succeeds for now.
-                            onJoinGame = { _ -> screen = Screen.Lobby },
-                            onFreeDraw = { screen = Screen.FreeDraw },
-                            modifier = contentModifier
-                        )
-                        Screen.Lobby -> PlaceholderScreen(
-                            title = "Lobby (Jerry's screen)",
-                            onBack = { screen = Screen.Home },
-                            modifier = contentModifier
-                        )
-                        Screen.EditAvatar -> PlaceholderScreen(
-                            title = "Edit avatar (not decided yet)",
-                            onBack = { screen = Screen.Home },
-                            modifier = contentModifier
-                        )
-                        Screen.Settings -> PlaceholderScreen(
-                            title = "Settings (not decided yet)",
-                            onBack = { screen = Screen.Home },
-                            modifier = contentModifier
-                        )
-                        Screen.FreeDraw -> PlaceholderScreen(
-                            title = "Free Draw (placeholder)",
-                            onBack = { screen = Screen.Home },
-                            modifier = contentModifier
-                        )
+                    // The phone's Back gesture pops the back stack, so it returns to Home.
+                    NavHost(
+                        navController = navController,
+                        startDestination = AppRoute.Home,
+                        modifier = Modifier.padding(innerPadding),
+                    ) {
+                        composable<AppRoute.Home> {
+                            HomeScreen(
+                                username,
+                                avatar,
+                                onUsernameChange = { username = it },
+                                onAvatarChange = { avatar = it },
+                                onSettings = { navController.navigate(AppRoute.Settings) },
+                                onCreateGame = { navController.navigate(AppRoute.Game(code = null)) },
+                                // HomeScreen only calls this with a complete 6-digit code.
+                                onJoinGame = { code -> navController.navigate(AppRoute.Game(code = code)) },
+                                onFreeDraw = { navController.navigate(AppRoute.FreeDraw) },
+                            )
+                        }
+                        // The whole game (lobby, rounds, end screens). GameScreen creates its
+                        // GameViewModel here, so the ViewModel lasts exactly as long as this
+                        // screen is on the back stack and is cleared when the player leaves.
+                        // The player's name and avatar are passed in directly, not in the route:
+                        // Avatar holds a Compose Color, which a route can't carry.
+                        composable<AppRoute.Game> { backStackEntry ->
+                            val route = backStackEntry.toRoute<AppRoute.Game>()
+                            GameScreen(
+                                gameCode = route.code,
+                                username = username,
+                                avatar = avatar,
+                                onLeave = { navController.popBackStack() },
+                            )
+                        }
+                        composable<AppRoute.Settings> {
+                            PlaceholderScreen(
+                                title = "Settings (not decided yet)",
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<AppRoute.FreeDraw> {
+                            PlaceholderScreen(
+                                title = "Free Draw (placeholder)",
+                                onBack = { navController.popBackStack() },
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    /*
+     * The player you get on first launch: a random team name and the default blob.
+     * `random` can be swapped in tests so the result is predictable.
+     */
+    private fun randomDefaultUsername(random: Random = Random): String {
+        return DefaultNames.random(random)
     }
 }
 
@@ -120,6 +162,6 @@ fun PlaceholderScreen(title: String, onBack: () -> Unit, modifier: Modifier = Mo
 @Composable
 fun PlaceholderScreenPreview() {
     InkorporateitTheme(dynamicColor = false) {
-        PlaceholderScreen(title = "Lobby (Jerry's screen)", onBack = {})
+        PlaceholderScreen(title = "Settings (not decided yet)", onBack = {})
     }
 }
