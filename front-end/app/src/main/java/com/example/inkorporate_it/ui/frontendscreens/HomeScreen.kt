@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.TextAutoSize
@@ -412,7 +411,9 @@ private fun NameField(
         value = draft,
         onValueChange = { typed -> draft = typed },
         placeholder = "Your name",
-        shape = CircleShape, // pill shape
+        // Same corners as the code field (InkTextField's default). A full pill's round
+        // end cut into the left-aligned name.
+        shape = RoundedCornerShape(18.dp),
         textStyle = MaterialTheme.typography.titleLarge,
         textAlign = TextAlign.Start, // name on the left, pencil on the right (#166)
         // Small grey pencil on the right, a hint that the name can be changed.
