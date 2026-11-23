@@ -108,7 +108,8 @@ private const val PressHoldMillis = 90L
 /*
  * A button in the ink style.
  * - containerColor / contentColor: fill and text color when enabled
- * - enabled = false: grey fill, light outline, no shadow (theme colors)
+ * - enabled = false: grey fill, light outline, and sitting pressed in (moved down onto
+ *   where its shadow would be). When it becomes enabled it slides up and the shadow appears.
  * - shadow: how far down the hard shadow sits (0.dp = none)
  * - outlineWidth: how thick the dark outline is (InkOutlineWidth unless the caller asks)
  * - onClick runs about 0.18 s after the tap, once the press bounce has played
@@ -152,9 +153,11 @@ fun InkButton(
     var clickPending by remember { mutableStateOf(false) }     // true = ignore extra taps
 
     // How far the button has moved down: 0 normally, the full shadow when pressed.
-    // animateDpAsState slides between the two instead of jumping.
+    // A disabled button stays down ("pressed in"), so it looks not ready yet; when it
+    // becomes enabled it slides up. animateDpAsState slides instead of jumping.
+    val sunk = (!enabled || isPressed || bouncing) && shadow > 0.dp
     val pressOffset by animateDpAsState(
-        targetValue = if ((isPressed || bouncing) && hasShadow) shadow else 0.dp,
+        targetValue = if (sunk) shadow else 0.dp,
         animationSpec = tween(durationMillis = PressAnimationMillis),
         label = "press"
     )
@@ -190,14 +193,17 @@ fun InkButton(
             // The shadow goes on the outside, so it's added before Surface draws.
             // The button moves down by pressOffset and the shadow shrinks by the same
             // amount, so the shadow stays put and the button "sinks" into it.
-            modifier = if (hasShadow) {
-                modifier
+            modifier = when {
+                hasShadow -> modifier
                     // Lambda form: the animation only re-places the button each frame,
                     // instead of rebuilding it (lint's advice). roundToPx(): dp → whole pixels.
                     .offset { IntOffset(x = 0, y = pressOffset.roundToPx()) }
                     .hardShadow(shape, colors.onBackground, shadow - pressOffset)
-            } else {
-                modifier
+                // Disabled: moved down (pressed in) but no shadow. hardShadow would also
+                // draw a dark edge line over the light disabled outline.
+                shadow > 0.dp -> modifier
+                    .offset { IntOffset(x = 0, y = pressOffset.roundToPx()) }
+                else -> modifier
             }
         ) {
             // Button text uses the theme's titleMedium (Sniglet) unless the caller sets a style.

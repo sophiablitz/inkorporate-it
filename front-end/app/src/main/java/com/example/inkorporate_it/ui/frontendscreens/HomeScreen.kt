@@ -293,7 +293,9 @@ fun HomeScreen(
                                     enabled = isJoinCodeComplete(joinCode),
                                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = inkOnYellow(), // near-black, in light and dark mode
-                                    shadow = 4.dp,
+                                    // Same as Create game, so the bottoms line up: pressed in (disabled)
+                                    // Join ends where Create game's shadow ends.
+                                    shadow = 5.dp,
                                     outlineWidth = BottomOutlineWidth,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
