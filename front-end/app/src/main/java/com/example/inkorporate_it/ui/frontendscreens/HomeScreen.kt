@@ -108,22 +108,26 @@ fun HomeScreen(
             modifier = modifier
                 .fillMaxSize()
                 .dotGrid(MaterialTheme.colorScheme.surfaceVariant) // faint dots behind everything
-                .imePadding() // the keyboard pushes Home up instead of covering the fields
+                // The keyboard pushes Home up instead of covering the fields. This works with
+                // windowSoftInputMode="adjustResize" in AndroidManifest.xml, which stops Android
+                // from also sliding the whole window up (that made room for the keyboard twice).
+                .imePadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
-            // The bottom section gets at least half of Home's height (see 3. below).
+            // The top row gets at least 15% of Home's height, the bottom at least half.
+            val topMinHeight = maxHeight * 0.15f
             val bottomMinHeight = maxHeight * 0.5f
 
             /*
              * Three sections, top to bottom: 15% title row, 35% avatar, 50% buttons.
              * No verticalScroll: everything fits on one screen.
              *
-             * How the split works: the bottom section has no weight, so Column measures
-             * it first, at least half the height (more if its content needs more).
-             * The top row and the avatar then share what's left 15 : 35.
-             * When the bottom takes exactly half, that's 15% / 35% / 50%.
-             * On a short screen the bottom keeps the room it needs and the avatar shrinks.
+             * How the split works: the top row and the bottom section have no weight, so
+             * Column measures them first: each takes its share (15% / 50%), or more if its
+             * content needs more. The avatar (weight 1f) gets whatever is left, 35% normally.
+             * On a short screen, or with the keyboard open, the title and buttons keep their
+             * size and only the avatar shrinks.
              */
             Column(
                 modifier = Modifier
@@ -132,10 +136,10 @@ fun HomeScreen(
                     .widthIn(max = MaxContentWidth)
                     .fillMaxWidth()
             ) {
-                // 1. Top row (15%): title on the left, settings on the right.
+                // 1. Top row (at least 15%): title on the left, settings on the right.
                 Row(
                     modifier = Modifier
-                        .weight(15f)
+                        .heightIn(min = topMinHeight)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -186,18 +190,24 @@ fun HomeScreen(
                     }
                 }
 
-                // 2. Avatar (35%): the biggest square that fits, so the blob grows and
-                // shrinks with the screen. Edit is Sophia's placeholder for now (see AvatarBlob).
+                // 2. Avatar (the rest, 35% normally): the biggest square that fits, so the blob
+                // grows and shrinks with the screen. Edit is Sophia's placeholder for now (see AvatarBlob).
                 BoxWithConstraints(
                     modifier = Modifier
-                        .weight(35f)
+                        .weight(1f)
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     // min(): the smaller of this section's width and height.
                     // Minus 16dp so the blob's shadow and the Edit pill stay inside the section.
                     val blobSize = (min(maxWidth, maxHeight) - 16.dp).coerceAtLeast(0.dp)
-                    AvatarBlob(avatar = avatar, onEdit = {onAvatarChange}, size = blobSize)
+                    // A tiny blob (keyboard open) has no room for the Edit pill, so leave it out
+                    // (null = no Edit button). It comes back when the keyboard closes.
+                    AvatarBlob(
+                        avatar = avatar,
+                        onEdit = if (blobSize >= MinBlobSizeForEdit) onAvatarChange else null,
+                        size = blobSize
+                    )
                 }
 
                 // 3. Bottom (at least 50%): name, Create / Join, Free Draw.
@@ -323,6 +333,9 @@ fun HomeScreen(
 
 // Widest Home's content gets. Phones are narrower, so this only matters on the unfolded Fold and tablets.
 private val MaxContentWidth = 420.dp
+
+// Below this size the blob is smaller than its Edit pill, so Home hides Edit.
+private val MinBlobSizeForEdit = 120.dp
 
 /*
  * The theme's text styles, all one step bolder (SemiBold), for Home only.
