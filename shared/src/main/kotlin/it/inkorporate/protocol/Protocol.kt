@@ -15,3 +15,5 @@ val ProtocolJson = Json {
     explicitNulls = false         // null fields are left out of the JSON
     encodeDefaults = true         // fields with default values are still sent
 }
+
+// Every message the phones and the server send each other.
