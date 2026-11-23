@@ -37,7 +37,7 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * place number, small blob, name, a "You" pill if it's this phone's player, and the score.
  *
  * - rowHeight: the screen works it out from the space it has (30-46dp).
- * - isMe: true = yellow row with the "You" pill.
+ * - isMe: true = adds the "You" pill. The row stays white: yellow means 1st place on this screen.
  * - textScale: makes all text a bit smaller or bigger (0.9 on short phones, 1.05 on tall ones).
  */
 @Composable
@@ -53,9 +53,8 @@ fun ResultRow(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(rowHeight * 0.36f) // rounder ends on taller rows
-    val fill = if (isMe) colors.secondaryContainer else colors.surfaceContainerLowest
-    // Text on yellow stays near-black, also in dark mode.
-    val textColor = if (isMe) inkOnYellow() else colors.onSurface
+    val fill = colors.surfaceContainerLowest // white (near-black in dark mode)
+    val textColor = colors.onSurface
     val textStyle = semiBold(16.sp * textScale)
 
     Row(
