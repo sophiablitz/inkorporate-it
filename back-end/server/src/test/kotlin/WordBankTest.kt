@@ -2,13 +2,35 @@ package it.inkorporate
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class WordBankTest {
 
     private val sampleJson = """{"words":["apple","banana","cherry"]}"""
+    private val sampleWords = setOf("apple", "banana", "cherry")
+
+    // --- constructor ---
+
+    @Test
+    fun `constructor seeds the available words`() {
+        val bank = WordBank(listOf("apple", "banana", "cherry"))
+        assertEquals(sampleWords, bank.updateList())
+    }
+
+    @Test
+    fun `constructor defaults to an empty word bank`() {
+        val bank = WordBank()
+        assertTrue(bank.updateList().isEmpty())
+    }
+
+    @Test
+    fun `constructor de-duplicates seed words`() {
+        val bank = WordBank(listOf("dup", "dup", "unique"))
+        assertEquals(setOf("dup", "unique"), bank.updateList())
+    }
+
+    // --- getCurrentWord ---
 
     @Test
     fun `getCurrentWord is null before any word is chosen`() {
@@ -17,15 +39,23 @@ class WordBankTest {
     }
 
     @Test
-    fun `loadJson populates the available words`() {
+    fun `getCurrentWord returns the most recently chosen word`() {
         val bank = WordBank()
         bank.loadJson(sampleJson)
 
-        // every word in the bank should be one of the loaded words
-        val words = setOf("apple", "banana", "cherry")
-        repeat(10) {
-            assertTrue(bank.chooseWord() in words)
-        }
+        val chosen = bank.chooseWord()
+        assertEquals(chosen, bank.getCurrentWord())
+    }
+
+    // --- loadJson ---
+
+    @Test
+    fun `loadJson loads all words into the available set`() {
+        val bank = WordBank()
+        bank.loadJson(sampleJson)
+
+        // every loaded word must be present in the available set
+        assertEquals(sampleWords, bank.updateList())
     }
 
     @Test
@@ -33,8 +63,7 @@ class WordBankTest {
         val bank = WordBank()
         bank.loadJson("""{"words":[]}""")
 
-        // choosing from an empty set throws
-        assertFailsWith<NoSuchElementException> { bank.chooseWord() }
+        assertTrue(bank.updateList().isEmpty())
     }
 
     @Test
@@ -43,12 +72,7 @@ class WordBankTest {
         bank.loadJson("""{"words":["one","two"]}""")
         bank.loadJson("""{"words":["three"]}""")
 
-        bank.chooseWord()
-        // all three words should still be present until removed
-        val remaining = bank.updateList()
-        // one word was chosen and removed, leaving two of the original three
-        assertEquals(2, remaining.size)
-        assertTrue(remaining.all { it in setOf("one", "two", "three") })
+        assertEquals(setOf("one", "two", "three"), bank.updateList())
     }
 
     @Test
@@ -56,10 +80,19 @@ class WordBankTest {
         val bank = WordBank()
         bank.loadJson("""{"words":["dup","dup","unique"]}""")
 
-        // updateList with no chosen word returns the full de-duplicated set
-        val words = bank.updateList()
-        assertEquals(setOf("dup", "unique"), words)
+        assertEquals(setOf("dup", "unique"), bank.updateList())
     }
+
+    // Real Json Test
+    @Test
+    fun `the real words json loads`() {
+        val json = WordBank::class.java.getResource("/words.json")!!.readText()
+        val bank = WordBank()
+        bank.loadJson(json)
+        assertTrue(bank.updateList().isNotEmpty())
+    }
+
+    // --- chooseWord ---
 
     @Test
     fun `chooseWord returns a loaded word and sets the current word`() {
@@ -67,15 +100,17 @@ class WordBankTest {
         bank.loadJson(sampleJson)
 
         val chosen = bank.chooseWord()
-        assertTrue(chosen in setOf("apple", "banana", "cherry"))
+        assertTrue(chosen in sampleWords)
         assertEquals(chosen, bank.getCurrentWord())
     }
 
     @Test
-    fun `chooseWord throws when no words are available`() {
+    fun `chooseWord returns null when no words are available`() {
         val bank = WordBank()
-        assertFailsWith<NoSuchElementException> { bank.chooseWord() }
+        assertNull(bank.chooseWord())
     }
+
+    // --- updateList ---
 
     @Test
     fun `updateList removes the current word from the available set`() {
@@ -94,8 +129,7 @@ class WordBankTest {
         val bank = WordBank()
         bank.loadJson(sampleJson)
 
-        val remaining = bank.updateList()
-        assertEquals(setOf("apple", "banana", "cherry"), remaining)
+        assertEquals(sampleWords, bank.updateList())
     }
 
     @Test
@@ -122,9 +156,12 @@ class WordBankTest {
             bank.updateList()
         }
 
-        // all words have been removed; the next choose should throw
-        assertFailsWith<NoSuchElementException> { bank.chooseWord() }
+        // all words have been removed; the next choose returns null
+        assertTrue(bank.updateList().isEmpty())
+        assertNull(bank.chooseWord())
     }
+
+    // --- resetList ---
 
     @Test
     fun `resetList clears all available words`() {
@@ -133,10 +170,8 @@ class WordBankTest {
 
         bank.resetList()
 
-        // set is now empty, so updateList returns an empty set
         assertTrue(bank.updateList().isEmpty())
-        // and choosing a word throws because nothing is available
-        assertFailsWith<NoSuchElementException> { bank.chooseWord() }
+        assertNull(bank.chooseWord())
     }
 
     @Test
