@@ -46,5 +46,6 @@ val AvatarSaver = listSaver<Avatar, Any>(
         )
     }
 )
-// Blue, like the blob in Jorge's colorful wireframe. The default color is not decided.
-val DefaultInkColor = Color(0xFF3B4FE0)
+// Indigo, the first blob color (BlobColors.kt), like the blob in Jorge's colorful wireframe.
+// The default color is not decided.
+val DefaultInkColor = BlobColors.Indigo
