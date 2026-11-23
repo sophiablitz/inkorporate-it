@@ -14,5 +14,5 @@ RUN ./gradlew :server:buildFatJar --no-daemon --console=plain
 # Step 2: the image Render actually runs. Only Java and the server jar, no build tools.
 FROM eclipse-temurin:21-jre
 COPY --from=build /repo/back-end/server/build/libs/server-all.jar /app/server.jar
-# The free Render plan has 512 MB of memory. Let Java use up to 75% of it.
+# Our Render plan has 512 MB of memory. Let Java use up to 75% of it.
 CMD ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/server.jar"]
