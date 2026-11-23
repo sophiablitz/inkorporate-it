@@ -78,10 +78,11 @@ GitHub blocks the merge if these fail, so catch them now. Start the test script
 in the background first, since it takes a few minutes:
 
 - **Test script.** Choose the target from what changed: `scripts/test.sh front-end`,
-  `scripts/test.sh back-end`, or `scripts/test.sh` for both. Keep reviewing
-  while it runs. If it fails, find the first real error in the output and turn
-  it into a **Must fix** with the file, line, and fix. If it fails because
-  `front-end/local.properties` or the Android SDK is missing, say that it's a setup
+  `scripts/test.sh back-end`, `scripts/test.sh shared`, or `scripts/test.sh` for
+  everything (always use this when `shared/` or the root Gradle files changed).
+  Keep reviewing while it runs. If it fails, find the first real error in the
+  output and turn it into a **Must fix** with the file, line, and fix. If it fails
+  because `local.properties` (in the top-level folder) or the Android SDK is missing, say that it's a setup
   problem, not their code, and point them to their team lead.
 - **Emulator flag.** Run `scripts/check-emulator-flag.sh --range origin/main..HEAD`.
   Any commit it lists is a **Must fix**: walk them through CONTRIBUTING.md,
