@@ -1,7 +1,6 @@
 package com.example.inkorporate_it.ui.component
 
 import android.content.res.Configuration
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -61,16 +59,12 @@ fun AvatarBlob(
                     .background(avatar.inkColor, CircleShape)
             )
         }
-        val context = LocalContext.current
         // Only show the Edit button when someone passed an onEdit function.
         if (onEdit != null) {
             // A small pill in the theme's secondaryContainer color (yellow in our theme).
             InkButton(
-                onClick = {Toast.makeText(
-                    context,
-                    "Edits not available yet!",
-                    Toast.LENGTH_SHORT
-                ).show()},
+                // Hands the current avatar to the caller (Home opens the color sheet).
+                onClick = { onEdit(avatar) },
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = inkOnYellow(), // near-black on yellow, in light and dark mode
                 shape = CircleShape,
