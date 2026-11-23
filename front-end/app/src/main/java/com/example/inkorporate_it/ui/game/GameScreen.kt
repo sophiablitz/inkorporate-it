@@ -87,6 +87,7 @@ fun GameScreen(
         onGoToLobby = viewModel::onGoToLobby,
         onLeave = leave,
         onStubPhase = viewModel::stubSetPhase,
+        currentPlayerName = username,
         modifier = modifier,
     )
 }
@@ -104,9 +105,11 @@ fun GameScreen(
     onLeave: () -> Unit,  // for player to leave a game
     onStubPhase: (phase: GamePhase, isMyTurnToDraw: Boolean) -> Unit, // STUB: placeholder buttons
     modifier: Modifier = Modifier,
+    currentPlayerName: String = "",  // this phone's name, so End of game can highlight its row
 ) {
     Column {
-        TopBar(onLeave)
+        // End of game has its own title and uses the whole height, so it skips the top bar.
+        if (state.phase != GamePhase.GameOver) TopBar(onLeave)
 
         when (state.phase) {
             GamePhase.Waiting -> LobbyScreen(
@@ -128,6 +131,7 @@ fun GameScreen(
                 onCloseRoom = onCloseRoom,
                 onGoToLobby = onGoToLobby,
                 modifier = modifier,
+                currentPlayerName = currentPlayerName,
                 onStubPhase = onStubPhase,
             )
         }
