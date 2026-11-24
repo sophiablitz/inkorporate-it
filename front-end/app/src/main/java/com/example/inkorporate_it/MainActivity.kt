@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,14 +25,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.inkorporate_it.model.Avatar
 import com.example.inkorporate_it.model.AvatarSaver
 import com.example.inkorporate_it.ui.frontendscreens.HomeScreen
 import com.example.inkorporate_it.ui.game.GameScreen
+import com.example.inkorporate_it.ui.servertest.CounterRoute
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
@@ -55,6 +59,11 @@ sealed interface AppRoute {
 
     @Serializable
     data object FreeDraw : AppRoute
+
+    // The counter round trip with the server (#139), opened from Home's debug-only
+    // "Server test" button.
+    @Serializable
+    data object ServerTest : AppRoute
 }
 
 class MainActivity : ComponentActivity() {
@@ -63,9 +72,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TEMPORARY (#141): connect to the local server when the app starts.
-        // The counter screen's ViewModel takes this over in #144.
-        (application as InkorporateApp).socket.connect()
         enableEdgeToEdge()
         setContent {
             // dynamicColor = false: use the team's Material Theme Builder colors,
@@ -83,7 +89,22 @@ class MainActivity : ComponentActivity() {
                 }
                 var username by rememberSaveable { mutableStateOf(randomDefaultUsername()) }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                // Which screen is showing, so the Server test button only appears on Home.
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val onHome = backStackEntry?.destination?.hasRoute<AppRoute.Home>() == true
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    // A way into the server test screen, in debug builds only (what Android Studio's
+                    // Run builds). Release builds can't reach a ws:// server anyway.
+                    floatingActionButton = {
+                        if (BuildConfig.DEBUG && onHome) {
+                            ExtendedFloatingActionButton(onClick = { navController.navigate(AppRoute.ServerTest) }) {
+                                Text("Server test")
+                            }
+                        }
+                    },
+                ) { innerPadding ->
                     // innerPadding keeps content clear of the status and navigation bars.
                     // The phone's Back gesture pops the back stack, so it returns to Home.
                     NavHost(
@@ -123,6 +144,12 @@ class MainActivity : ComponentActivity() {
                                 title = "Settings (not decided yet)",
                                 onBack = { navController.popBackStack() },
                             )
+                        }
+                        // CounterRoute creates its CounterViewModel here, so (like the game) it's
+                        // cleared when the player goes back. The connection itself lives on in
+                        // InkorporateApp.
+                        composable<AppRoute.ServerTest> {
+                            CounterRoute(onBack = { navController.popBackStack() })
                         }
                         composable<AppRoute.FreeDraw> {
                             PlaceholderScreen(

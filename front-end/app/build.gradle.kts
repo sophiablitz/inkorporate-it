@@ -37,6 +37,14 @@ android {
     }
     buildFeatures {
         compose = true
+        // Generates BuildConfig.DEBUG, so debug-only things (like the Server test button) can check it.
+        buildConfig = true
+    }
+    testOptions {
+        // Unit tests run on plain Java, where Android classes like android.util.Log are
+        // empty stand-ins that throw. This makes them do nothing instead, so code that logs
+        // (GameClient, for example) can be unit tested.
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -57,6 +65,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

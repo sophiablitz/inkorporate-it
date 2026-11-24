@@ -1,6 +1,7 @@
 package com.example.inkorporate_it
 
 import android.app.Application
+import com.example.inkorporate_it.data.network.GameClient
 import com.example.inkorporate_it.data.network.GameSocket
 import com.example.inkorporate_it.data.network.KtorGameSocket
 
@@ -16,4 +17,7 @@ class InkorporateApp : Application() {
 
     /** The one connection to the server. Created the first time something asks for it. */
     val socket: GameSocket by lazy { KtorGameSocket() }
+
+    /** The menu screens use to talk to the server, built on that one connection. */
+    val gameClient: GameClient by lazy { GameClient(socket) }
 }
