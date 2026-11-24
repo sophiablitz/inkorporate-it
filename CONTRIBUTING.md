@@ -98,23 +98,31 @@ SDK's location to `local.properties` in the top-level folder. If you had one in
 7. **Open a PR.** Git prints a link after you push, or GitHub shows a
    **Compare & pull request** button on the repo page. Fill in the template.
 
-8. **Get reviews.** On the PR's right side, under **Reviewers**, ask a teammate.
-   GitHub adds the team leads automatically.
+8. **Update your branch, then get reviews.** If the PR says the branch is
+   out-of-date, click **Update branch** first. Then, on the PR's right side,
+   under **Reviewers**, ask a teammate. GitHub adds the team leads automatically.
 
-9. **Merge.** When the merge box is green, click **Merge pull request**, then
-   **Delete branch**.
+9. **Merge.** If `main` changed since your reviews, click **Update branch**
+   again and wait for the checks. When the merge box is green, click
+   **Merge pull request**, then **Delete branch**.
 
 ## What has to pass before a PR can merge
 
 | Requirement | Who or what checks it |
 | --- | --- |
-| 2 approvals, including 1 from a team lead | **Review count** check and reviewers on GitHub |
-| If you're a team lead: 1 approval from another lead | **Review count** check and reviewers on GitHub |
+| 2 approvals, including 1 from a team lead | **Review count** check |
+| If you're a team lead: 1 approval from any teammate | **Review count** check |
+| The branch is up to date with `main` | GitHub's merge box |
 | `scripts/test.sh` passes | **Test script** check |
 | Android commits have `[emulator-tested]` | **Emulator flag** check |
 
-You can't approve your own PR. If you push new commits after being approved, the
-approvals are cleared, so ask your reviewers to look again.
+The team leads are the people listed in `.github/CODEOWNERS`.
+
+You can't approve your own PR. An approval only counts if your branch was up to
+date with `main` when the reviewer approved it. If **Review count** says an
+approval was "given while behind main", click **Update branch** and ask that
+reviewer to approve again. After an approval, updating from `main` keeps it,
+but pushing your own new commits clears it.
 
 ## Reviewing a PR
 
