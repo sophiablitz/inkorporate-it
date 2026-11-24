@@ -14,9 +14,9 @@ import com.example.inkorporate_it.model.Avatar
  * The fields are already worked out for the screen (isMyTurnToDraw, wordHint),
  * so composables never have to compare player ids or hide the word themselves.
  *
- * NOT FINAL: GamePlayer, Stroke and ChatMessage are UI-side placeholders.
- * The shared protocol models (shared/.../protocol/Models.kt) are still empty;
- * once they exist, GameViewModel converts them into these types.
+ * GamePlayer, Stroke and ChatMessage are the screen's versions of the shared protocol
+ * models (shared/.../protocol/Models.kt). GameViewModel converts between them
+ * (GameSession.toUiState() and Stroke.toWire()), so composables never see the protocol.
  */
 data class GameUiState(
     val phase: GamePhase = GamePhase.Waiting,
