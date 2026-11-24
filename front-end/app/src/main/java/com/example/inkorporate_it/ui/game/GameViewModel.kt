@@ -39,24 +39,25 @@ import it.inkorporate.protocol.Avatar as WireAvatar
  *
  * Codes are 6 digits kept as text, so a leading 0 is never lost.
  *
- * STUB: the server doesn't answer these messages yet. Until it does, the screen starts
- * with a fake room and the placeholder buttons call stubSetPhase(), so the team can
- * click through the whole game. As soon as the server answers, its state replaces the
- * fake one.
+ * Everything on screen comes from the server. Until the real server answers, the app
+ * talks to StubServerSocket instead (see InkorporateApp.USE_STUB_SERVER); this class
+ * can't tell the difference.
+ *
+ * STUB: the placeholder screens' buttons still call stubSetPhase() to jump between
+ * phases. Remove it once those screens are built.
  */
 class GameViewModel(
     gameCode: String?,
-    private val username: String,
-    private val avatar: Avatar,
+    username: String,
+    avatar: Avatar,
     socket: GameSocket,
 ) : ViewModel() {
 
     /** Listens for as long as this ViewModel lives; the socket itself stays open after. */
     private val client = GameClient(socket, viewModelScope)
 
-    private val _uiState = MutableStateFlow(
-        if (gameCode == null) stubCreatedRoom() else stubJoinedRoom(gameCode)
-    )
+    // Empty until the server answers create_room or join_room.
+    private val _uiState = MutableStateFlow(GameUiState())
 
     /** What GameScreen draws. Read-only from outside. */
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
@@ -83,9 +84,6 @@ class GameViewModel(
     /** The host tapped Start in the lobby. */
     fun onStartGame() {
         viewModelScope.launch { client.startGame() }
-        // STUB: start round 1 with this phone drawing, until the server sends round_start.
-        _uiState.update { it.copy(round = 1, totalRounds = 3) }
-        stubSetPhase(GamePhase.Drawing, isMyTurnToDraw = true)
     }
 
     /** The host tapped Start on the end of round screen. */
@@ -138,8 +136,8 @@ class GameViewModel(
     }
 
     /**
-     * The server said something. Once it has sent a room, the screen shows only the
-     * server's state. Before that (STUB), keep the fake room and just show any error.
+     * The server said something. In a room: show the room. Not in one (not joined yet,
+     * or the room closed): keep what's on screen and show why, if there's a reason.
      */
     private fun onServerUpdate(session: GameSession) {
         if (session.room != null) {
@@ -149,26 +147,6 @@ class GameViewModel(
             _uiState.update { it.copy(errorMessage = error) }
         }
     }
-
-    // STUB: a fake room with two players, so the lobby's Start button is enabled (it needs 2+).
-    private fun stubCreatedRoom() = GameUiState(
-        roomCode = "STUB",
-        isHost = true,
-        players = listOf(
-            GamePlayer(name = username, avatar = avatar, isHost = true),
-            GamePlayer(name = "Stub player"),
-        ),
-    )
-
-    // STUB: pretend the code worked. Guests have no Start button: they wait for the host.
-    private fun stubJoinedRoom(code: String) = GameUiState(
-        roomCode = code,
-        isHost = false,
-        players = listOf(
-            GamePlayer(name = "Stub host", isHost = true),
-            GamePlayer(name = username, avatar = avatar),
-        ),
-    )
 
     companion object {
         /**

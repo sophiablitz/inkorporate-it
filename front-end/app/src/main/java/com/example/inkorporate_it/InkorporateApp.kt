@@ -3,6 +3,7 @@ package com.example.inkorporate_it
 import android.app.Application
 import com.example.inkorporate_it.data.network.GameSocket
 import com.example.inkorporate_it.data.network.KtorGameSocket
+import com.example.inkorporate_it.data.network.StubServerSocket
 
 /**
  * The app itself. Android creates exactly one of these when the app starts, before
@@ -15,5 +16,16 @@ import com.example.inkorporate_it.data.network.KtorGameSocket
 class InkorporateApp : Application() {
 
     /** The one connection to the server. Created the first time something asks for it. */
-    val socket: GameSocket by lazy { KtorGameSocket() }
+    val socket: GameSocket by lazy {
+        if (USE_STUB_SERVER) StubServerSocket() else KtorGameSocket()
+    }
+
+    companion object {
+        /**
+         * true: play against StubServerSocket, a pretend server inside the app.
+         * false: connect to the real server (run it with ./gradlew :server:run).
+         * Flip to false once the server answers the protocol's messages.
+         */
+        const val USE_STUB_SERVER = true
+    }
 }
