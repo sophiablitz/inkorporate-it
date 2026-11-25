@@ -322,11 +322,11 @@ private fun PlayerGrid(players: List<GamePlayer>, modifier: Modifier = Modifier)
 @Preview(showBackground = true)
 @Composable
 fun LobbyScreenHostPreview() {
-    InkorporateitTheme { LobbyScreen(previewGuesserState) }
+    InkorporateitTheme { LobbyScreen(previewGuesserState.copy(isHost = true)) }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun LobbyScreenGuestPreview() {
-    InkorporateitTheme { LobbyScreen(previewGuesserState) }
+    InkorporateitTheme { LobbyScreen(previewGuesserState.copy(isHost = false)) }
 }
