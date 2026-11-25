@@ -123,7 +123,22 @@ class GameViewModel(
      * the game. Delete this once the server sends the real phase changes.
      */
     fun stubSetPhase(phase: GamePhase, isMyTurnToDraw: Boolean = false) {
-        _uiState.update { it.copy(phase = phase, isMyTurnToDraw = isMyTurnToDraw) }
+        _uiState.update {
+            it.copy(
+                phase = phase,
+                isMyTurnToDraw = isMyTurnToDraw,
+                // STUB: the end screen is designed for 8 players with scores, so it gets the
+                // mockup's players, with this phone in Jerry's place (4th). The server will
+                // send the real players and scores.
+                players = if (phase == GamePhase.GameOver) {
+                    previewFinalPlayers.map { player ->
+                        if (player.name == "Jerry") player.copy(name = username, avatar = avatar) else player
+                    }
+                } else {
+                    it.players
+                },
+            )
+        }
     }
 
     companion object {
