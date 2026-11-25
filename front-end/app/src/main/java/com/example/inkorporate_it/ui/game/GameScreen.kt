@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -130,12 +131,18 @@ fun GameScreen(
         // End of game has its own title and uses the whole height, so it skips the top bar.
         if (state.phase != GamePhase.GameOver) {
             TopBar(
-                when (state.phase) {
+                title = when (state.phase) {
                     GamePhase.Waiting -> "Lobby"
                     GamePhase.Drawing -> state.wordHint
                     GamePhase.RoundOver -> "Round Results"
                     GamePhase.GameOver -> "Results"
-                }, onLeave
+                },
+                onLeave = onLeave,
+                // Only Drawing / Guessing has a round in progress and a clock running.
+                // The other phases leave these null, so the top bar shows the brand instead.
+                round = state.round.takeIf { state.phase == GamePhase.Drawing },
+                totalRounds = state.totalRounds.takeIf { state.phase == GamePhase.Drawing },
+                secondsLeft = state.secondsLeft.takeIf { state.phase == GamePhase.Drawing },
             )
         }
 
@@ -171,9 +178,19 @@ fun GameScreen(
  * Not used yet: move them into those screens' files when they're built.
  */
 
+/**
+ * The Leave button, the title, and on the right either the round and timer or the brand.
+ * - round, totalRounds, secondsLeft: when all three are given, the right side shows
+ *   "Round 2 of 4" above the time left ("0:42"). If any is null, it shows "Inkorporate.it".
+ */
 @Composable
-private fun TopBar(title: String, onLeave: () -> Unit) {
-    // Top bar: Leave button
+private fun TopBar(
+    title: String,
+    onLeave: () -> Unit,
+    round: Int? = null,
+    totalRounds: Int? = null,
+    secondsLeft: Int? = null,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -182,19 +199,52 @@ private fun TopBar(title: String, onLeave: () -> Unit) {
     ) {
         LeaveButton(onClick = onLeave)
         Spacer(Modifier.width(12.dp))
+        // weight(1f): the title takes the space in the middle and cuts off with "…"
+        // instead of pushing the right side off the screen.
         Text(
             text = title,
+            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.width(12.dp))
+        if (round != null && totalRounds != null && secondsLeft != null) {
+            RoundAndTimer(round, totalRounds, secondsLeft)
+        } else {
+            Text(
+                text = "Inkorporate.it",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF451FCF),
+            )
+        }
+    }
+}
+
+/** "Round 2 of 4" above the time left, right-aligned. */
+@Composable
+private fun RoundAndTimer(round: Int, totalRounds: Int, secondsLeft: Int) {
+    Column(horizontalAlignment = Alignment.End) {
         Text(
-            text = "Inkorporate.it",
-            fontSize = 18.sp,
+            text = formatSeconds(secondsLeft),
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF451FCF),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = "Round $round of $totalRounds",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** 42 -> "0:42", 75 -> "1:15". Never shows a negative time. */
+internal fun formatSeconds(seconds: Int): String {
+    val safe = seconds.coerceAtLeast(0)
+    return "${safe / 60}:${(safe % 60).toString().padStart(2, '0')}"
 }
 
 // --- Previews (dynamicColor = false shows the team's colors, not wallpaper colors) ---
