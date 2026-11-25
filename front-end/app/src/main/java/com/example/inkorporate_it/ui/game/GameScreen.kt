@@ -128,7 +128,16 @@ fun GameScreen(
 ) {
     Column {
         // End of game has its own title and uses the whole height, so it skips the top bar.
-        if (state.phase != GamePhase.GameOver) TopBar(onLeave)
+        if (state.phase != GamePhase.GameOver) {
+            TopBar(
+                when (state.phase) {
+                    GamePhase.Waiting -> "Lobby"
+                    GamePhase.Drawing -> state.wordHint
+                    GamePhase.RoundOver -> "Round Results"
+                    GamePhase.GameOver -> "Results"
+                }, onLeave
+            )
+        }
 
         when (state.phase) {
             GamePhase.Waiting -> LobbyScreen(
@@ -163,7 +172,7 @@ fun GameScreen(
  */
 
 @Composable
-private fun TopBar(onLeave: () -> Unit) {
+private fun TopBar(title: String, onLeave: () -> Unit) {
     // Top bar: Leave button
     Row(
         modifier = Modifier
@@ -174,7 +183,7 @@ private fun TopBar(onLeave: () -> Unit) {
         LeaveButton(onClick = onLeave)
         Spacer(Modifier.width(12.dp))
         Text(
-            text = "Lobby",
+            text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -224,6 +233,18 @@ fun GameScreenLobbyPreview() {
 @Composable
 fun GameScreenGuessingPreview() {
     GameScreenPreview(previewGuesserState)
+}
+
+@Preview(showBackground = true, name = "Drawing")
+@Composable
+fun GameScreenDrawingPreview() {
+    GameScreenPreview(
+        previewGuesserState.copy(
+            phase = GamePhase.Drawing,
+            isMyTurnToDraw = true,
+            wordHint = "TREE"
+        )
+    )
 }
 
 @Preview(showBackground = true, name = "Game, end of round")
