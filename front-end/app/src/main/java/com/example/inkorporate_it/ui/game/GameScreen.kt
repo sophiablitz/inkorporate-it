@@ -9,6 +9,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.inkorporate_it.model.Avatar
 import com.example.inkorporate_it.ui.component.LeaveButton
+import com.example.inkorporate_it.ui.component.LeaveGameDialog
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 
 /*
@@ -49,7 +53,8 @@ import com.example.inkorporate_it.ui.theme.InkorporateitTheme
  * - gameCode: null = create a new game, a 6-digit code = join that game
  * - username, avatar: this player, as set on Home. Sent to the room when creating or joining.
  * - onLeave: go back out of the game (MainActivity pops it off the back stack).
- *   Runs after GameViewModel.leaveGame(), for both the Leave button and the Back gesture.
+ *   The Leave button and the Back gesture first show LeaveGameDialog; onLeave runs after
+ *   GameViewModel.leaveGame(), once the player confirms.
  */
 @Composable
 fun GameScreen(
@@ -69,12 +74,26 @@ fun GameScreen(
     // collectAsStateWithLifecycle stops listening while the app is in the background.
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val leave = {
-        viewModel.leaveGame()
-        onLeave()
+    // Whether the "Leave the game?" dialog is showing. rememberSaveable keeps it open
+    // when the phone rotates.
+    var showLeaveDialog by rememberSaveable { mutableStateOf(false) }
+
+    // The Leave button and the Back gesture both ask first, so a stray tap or swipe
+    // doesn't drop the player out of the game.
+    val askToLeave = { showLeaveDialog = true }
+    // Without this, Back would close the game without asking or telling the ViewModel.
+    BackHandler(onBack = askToLeave)
+
+    if (showLeaveDialog) {
+        LeaveGameDialog(
+            onConfirm = {
+                showLeaveDialog = false
+                viewModel.leaveGame()
+                onLeave()
+            },
+            onDismiss = { showLeaveDialog = false },
+        )
     }
-    // Without this, Back would close the game without telling the ViewModel.
-    BackHandler(onBack = leave)
 
     GameScreen(
         state = state,
@@ -85,7 +104,7 @@ fun GameScreen(
         onContinueGame = viewModel::onStartNextRound,
         onCloseRoom = viewModel::onCloseRoom,
         onGoToLobby = viewModel::onGoToLobby,
-        onLeave = leave,
+        onLeave = askToLeave,
         onStubPhase = viewModel::stubSetPhase,
         currentPlayerName = username,
         modifier = modifier,
