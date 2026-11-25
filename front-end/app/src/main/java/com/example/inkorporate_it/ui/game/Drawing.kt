@@ -2,7 +2,9 @@ package com.example.inkorporate_it.ui.game
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,8 +19,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.inkorporate_it.ui.component.DrawerGettingWordOverlay
 import com.example.inkorporate_it.ui.component.DrawingCanvas
 import com.example.inkorporate_it.ui.component.DrawingState
+import com.example.inkorporate_it.ui.component.PlayerAvatarRow
 import com.example.inkorporate_it.ui.component.TurnIntroOverlay
 import com.example.inkorporate_it.ui.component.WordRevealOverlay
+import com.example.inkorporate_it.ui.component.fakeAvatarPlayers
+import com.example.inkorporate_it.ui.component.randomFakeGuesserIds
 
 @Composable
 fun DrawingScreen(
@@ -34,12 +39,22 @@ fun DrawingScreen(
     val drawingState = remember { DrawingState() }
     var showWord by rememberSaveable { mutableStateOf(false) }
     var showIntro by rememberSaveable { mutableStateOf(true) }
-    var Draw by rememberSaveable { mutableStateOf(false) }
+    var Draw by rememberSaveable { mutableStateOf(true) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
+
+
         // your screen content first
         Column(Modifier.fillMaxSize().padding(16.dp)) {
+            // Players row, with the pencil on whoever is drawing
+            PlayerAvatarRow(
+                players = fakeAvatarPlayers,
+                correctGuesserIds = remember { randomFakeGuesserIds(fakeAvatarPlayers) }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             DrawingCanvas(
                 state = drawingState,
                 isDrawing = Draw && !showIntro,
@@ -51,7 +66,7 @@ fun DrawingScreen(
         if (showIntro) {
             if (Draw) {
                 WordRevealOverlay(
-                    word = state.wordHint,
+                    word = "Tree",
                     onFinished = { showIntro = false }
                 )
             } else {

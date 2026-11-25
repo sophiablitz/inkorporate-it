@@ -23,7 +23,7 @@ data class GameUiState(
     val roomCode: String = "",
     val isHost: Boolean = false,        // true if this phone created the room
     val players: List<GamePlayer> = emptyList(),
-    val isMyTurnToDraw: Boolean = false,
+    val isMyTurnToDraw: Boolean = true,
     val wordHint: String = "",          // "_ _ _ _ _" for guessers, the whole word for the drawer
     val secondsLeft: Int = 0,
     val round: Int = 0,
