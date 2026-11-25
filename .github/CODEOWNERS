@@ -1,4 +1,5 @@
-# Team leads. Approval from any one person on a line counts as the lead review.
+# Team leads. GitHub asks them to review every PR, and the Review count check
+# reads this file to decide who counts as a lead.
 # When several lines match a file, the last one wins.
 
 *           @sophiablitz @mrsaladbar @ismaelrosier15
