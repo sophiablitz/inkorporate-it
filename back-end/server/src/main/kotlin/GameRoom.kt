@@ -3,12 +3,15 @@ package it.inkorporate
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 
-// Section 1 (Rooms and connections). This file will hold RoomRegistry,
-// PlayerConnection and GameRoom. For now (#77) it's only the registry and a
-// bare GameRoom that #78 fills in.
+// Section 1 
+// After my changes post code review, this file holds RoomRegistry, PlayerConnection and GameRoom.
 
 // TODO: use ROOM_CODE_LENGTH from shared/ once the protocol is in the server build.
 private const val CODE_LENGTH = 6
+
+// How many codes create() tries before giving up, so it can never loop forever
+// if the codes somehow run out. With a million codes it never gets close.
+private const val MAX_CREATE_ATTEMPTS = 100
 
 /**
  * One phone that has joined a room. The server picks [id]; two players can
@@ -55,24 +58,16 @@ class GameRoom(val code: String, val host: PlayerConnection) {
 }
 
 /**
- * A random room code: exactly [CODE_LENGTH] digits, leading zeros allowed
- * ("004213" is valid). It's a String, not an Int, so the zeros survive.
- *
- * Only makes a code. Making sure nobody else already has it is
- * [RoomRegistry.create]'s job.
- */
-fun randomRoomCode(random: Random = Random.Default): String =
-    buildString { repeat(CODE_LENGTH) { append(random.nextInt(10)) } }
-
-/**
  * Every live room on the server, by code. There is one registry for the whole
  * server, and every phone's connection uses it at the same time, so it has to
  * be safe when two phones create or leave rooms at the same moment.
- *
- * [newCode] is where codes come from. It defaults to [randomRoomCode]. Tests
- * pass their own list of codes to force a collision.
  */
-class RoomRegistry(private val newCode: () -> String = { randomRoomCode() }) {
+class RoomRegistry {
+    companion object {
+        /** A random room code: exactly CODE_LENGTH digits, leading zeros allowed. */
+        fun randomRoomCode(random: Random = Random.Default): String =
+            buildString { repeat(CODE_LENGTH) { append(random.nextInt(10)) } }
+    }
     private val rooms = ConcurrentHashMap<String, GameRoom>()
 
     val size: Int get() = rooms.size
@@ -87,10 +82,11 @@ class RoomRegistry(private val newCode: () -> String = { randomRoomCode() }) {
      * wasn't, in which case we try another code.
      */
     fun create(host: PlayerConnection): GameRoom {
-        while (true) {
-            val room = GameRoom(newCode(), host)
+        repeat(MAX_CREATE_ATTEMPTS) {
+            val room = GameRoom(randomRoomCode(), host)
             if (rooms.putIfAbsent(room.code, room) == null) return room
         }
+        error("No free room code after $MAX_CREATE_ATTEMPTS tries")
     }
 
     /** The room with this code, or null if there isn't one (join_room sends ROOM_NOT_FOUND). */

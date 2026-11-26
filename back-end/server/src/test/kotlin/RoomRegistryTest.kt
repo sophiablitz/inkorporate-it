@@ -1,5 +1,6 @@
 package it.inkorporate
 
+import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -18,7 +19,7 @@ class RoomRegistryTest {
     fun `a room code is six digits`() {
         // With 1000 codes, about 100 start with 0, so this also covers leading zeros.
         repeat(1000) {
-            val code = randomRoomCode()
+            val code = RoomRegistry.randomRoomCode()
             assertEquals(6, code.length, "wrong length: $code")
             assertTrue(code.all { it.isDigit() }, "not all digits: $code")
         }
@@ -31,15 +32,6 @@ class RoomRegistryTest {
         val registry = RoomRegistry()
         val codes = List(1000) { registry.create(host()).code }
         assertEquals(codes.size, codes.toSet().size)
-    }
-
-    @Test
-    fun `create skips a code that is already taken`() {
-        val codes = mutableListOf("111111", "111111", "222222")
-        val registry = RoomRegistry(newCode = { codes.removeFirst() })
-
-        assertEquals("111111", registry.create(host()).code)
-        assertEquals("222222", registry.create(host()).code)
     }
 
     // ---------- find ----------
@@ -68,12 +60,27 @@ class RoomRegistryTest {
 
     @Test
     fun `removing an old room does not delete a new room with the same code`() {
-        val registry = RoomRegistry(newCode = { "111111" })
+        val registry = RoomRegistry()
         val current = registry.create(host())
-        val stale = GameRoom("111111", host())   // same code, different room
+        val stale = GameRoom(current.code, host())   // same code, different room
 
         registry.remove(stale)
 
-        assertSame(current, registry.find("111111"))
+        assertSame(current, registry.find(current.code))
+    }
+
+    // ---------- many phones at once ----------
+
+    @Test
+    fun `rooms created at the same moment never share a code`() {
+        val registry = RoomRegistry()
+
+        // 8 threads, each one a phone tapping Create 1000 times at the same moment.
+        // 8000 rooms out of 1,000,000 codes means about 30 collisions, so the
+        // "code taken, try another" path really runs while other threads write.
+        List(8) { thread { repeat(1000) { registry.create(host()) } } }.forEach { it.join() }
+
+        // If two creates had overwritten each other, there would be fewer than 8000 rooms.
+        assertEquals(8000, registry.size)
     }
 }
