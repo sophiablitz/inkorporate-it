@@ -11,6 +11,8 @@ import kotlin.test.assertTrue
 // we just make one and call it.
 class RoomRegistryTest {
 
+    private fun host() = PlayerConnection(id = "h", name = "Host")
+
     // ---------- randomRoomCode ----------
 
     @Test
@@ -28,7 +30,7 @@ class RoomRegistryTest {
     @Test
     fun `created rooms get different codes`() {
         val registry = RoomRegistry()
-        val codes = List(1000) { registry.create().code }
+        val codes = List(1000) { registry.create(host()).code }
         assertEquals(codes.size, codes.toSet().size)
     }
 
@@ -37,7 +39,7 @@ class RoomRegistryTest {
     @Test
     fun `find returns the room that create made`() {
         val registry = RoomRegistry()
-        val room = registry.create()
+        val room = registry.create(host())
         assertSame(room, registry.find(room.code))
     }
 
@@ -51,7 +53,7 @@ class RoomRegistryTest {
     @Test
     fun `find returns null after remove`() {
         val registry = RoomRegistry()
-        val room = registry.create()
+        val room = registry.create(host())
         registry.remove(room)
         assertNull(registry.find(room.code))
     }
@@ -59,8 +61,8 @@ class RoomRegistryTest {
     @Test
     fun `removing an old room does not delete a new room with the same code`() {
         val registry = RoomRegistry()
-        val current = registry.create()
-        val stale = GameRoom(current.code)   // same code, different room
+        val current = registry.create(host())
+        val stale = GameRoom(current.code, host())   // same code, different room
 
         registry.remove(stale)
 
@@ -76,7 +78,7 @@ class RoomRegistryTest {
         // 8 threads, each one a phone tapping Create 1000 times at the same moment.
         // 8000 rooms out of 1,000,000 codes means about 30 collisions, so the
         // "code taken, try another" path really runs while other threads write.
-        List(8) { thread { repeat(1000) { registry.create() } } }.forEach { it.join() }
+        List(8) { thread { repeat(1000) { registry.create(host()) } } }.forEach { it.join() }
 
         // If two creates had overwritten each other, there would be fewer than 8000 rooms.
         assertEquals(8000, registry.size)
