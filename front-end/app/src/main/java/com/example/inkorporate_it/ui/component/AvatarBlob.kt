@@ -83,7 +83,7 @@ fun AvatarBlob(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = inkOnYellow(), // near-black on yellow, in light and dark mode
                 shape = CircleShape,
-                shadow = 3.dp,
+                shadow = 4.dp,
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
