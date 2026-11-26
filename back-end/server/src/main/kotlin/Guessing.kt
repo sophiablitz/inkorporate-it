@@ -3,11 +3,12 @@ package it.inkorporate
 import kotlin.math.roundToInt
 
 /**
- * Scoring for guessers and the drawer, from the back-end design doc's scoring table.
+ * Scoring for guessers and the drawer. The task is section 3 of the back-end plan;
+ * the formulas and worked example come from the "Scoring" section of the app design doc.
  * The Guessing class that uses these arrives with #105.
  *
- * roundToInt rounds half away from zero, which matches the design table's round-half-up
- * (for example 91.5 -> 92) because these scores are never negative: the early returns guarantee it.
+ * roundToInt rounds a .5 up (toward positive infinity), which is the design table's
+ * round-half-up (for example 91.5 -> 92).
  */
 
 /**
@@ -33,7 +34,7 @@ fun pointsForGuess(rank: Int, secondsTaken: Int, turnSeconds: Int, playerCount: 
  * [guessSecondsTaken] has one entry per correct guesser; an empty list means nobody guessed, so 0.
  */
 fun pointsForDrawer(guessSecondsTaken: List<Int>, turnSeconds: Int, totalGuessers: Int): Int {
-    if (turnSeconds <= 0 || totalGuessers <= 0 || guessSecondsTaken.isEmpty()) return 0
+    if (turnSeconds <= 0 || totalGuessers <= 0 || guessSecondsTaken.isEmpty() || guessSecondsTaken.size > totalGuessers) return 0
     val meanTimeBonus = guessSecondsTaken.map { timeBonus(it, turnSeconds) }.average()
     val points = 250.0 * (guessSecondsTaken.size.toDouble() / totalGuessers) * meanTimeBonus
     return points.roundToInt()

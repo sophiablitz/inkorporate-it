@@ -54,4 +54,8 @@ class GuessingTest {
     fun `non-positive totalGuessers scores the drawer 0`() {
         assertEquals(0, pointsForDrawer(guessSecondsTaken = listOf(9, 22), turnSeconds = 80, totalGuessers = 0))
     }
+    @Test
+    fun `more correct guessers than total guessers scores 0`() {
+        assertEquals(0, pointsForDrawer(guessSecondsTaken = listOf(9, 22, 38), turnSeconds = 80, totalGuessers = 2))
+    }
 }
