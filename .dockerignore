@@ -1,0 +1,8 @@
+# Files the Docker build never needs. Skipping them makes the build faster.
+# Don't add front-end/ here: Gradle reads front-end/app's build file even when it only builds the server.
+.git
+.idea
+**/build
+**/.gradle
+**/.kotlin
+local.properties
