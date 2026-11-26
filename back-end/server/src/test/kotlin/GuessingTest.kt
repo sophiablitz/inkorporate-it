@@ -2,6 +2,8 @@ package it.inkorporate
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 // Tests for the scoring functions in Guessing.kt, against the design doc's worked example (turnSeconds = 80).
 class GuessingTest {
@@ -57,5 +59,34 @@ class GuessingTest {
     @Test
     fun `more correct guessers than total guessers scores 0`() {
         assertEquals(0, pointsForDrawer(guessSecondsTaken = listOf(9, 22, 38), turnSeconds = 80, totalGuessers = 2))
+    }
+    // --- guess matching ---
+    @Test
+    fun `exact guess matches`() {
+        assertTrue(guessMatches("apple", "apple"))
+    }
+    @Test
+    fun `guess matches ignoring case`() {
+        assertTrue(guessMatches("ApPlE", "apple"))
+    }
+    @Test
+    fun `guess matches with leading and trailing spaces`() {
+        assertTrue(guessMatches("  apple  ", "apple"))
+    }
+    @Test
+    fun `guess matches with doubled interior spaces`() {
+        assertTrue(guessMatches("red  apple", "red apple"))
+    }
+    @Test
+    fun `near miss does not match`() {
+        assertFalse(guessMatches("apples", "apple"))
+    }
+    @Test
+    fun `empty guess does not match`() {
+        assertFalse(guessMatches("", "apple"))
+    }
+    @Test
+    fun `whitespace-only guess does not match`() {
+        assertFalse(guessMatches("   ", "apple"))
     }
 }

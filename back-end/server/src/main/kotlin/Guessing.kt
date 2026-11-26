@@ -1,5 +1,6 @@
 package it.inkorporate
 
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -39,3 +40,11 @@ fun pointsForDrawer(guessSecondsTaken: List<Int>, turnSeconds: Int, totalGuesser
     val points = 250.0 * (guessSecondsTaken.size.toDouble() / totalGuessers) * meanTimeBonus
     return points.roundToInt()
 }
+
+/** Normalizes a guess for matching: trim, lowercase, and collapse interior whitespace runs to one space. */
+private fun normalizeGuess(guess: String): String =
+    guess.trim().lowercase(Locale.ROOT).replace(Regex("\\s+"), " ")
+
+/** True when [guess] matches [word] once both are normalized, ignoring capitals and extra spaces. */
+internal fun guessMatches(guess: String, word: String): Boolean =
+    normalizeGuess(guess) == normalizeGuess(word)
