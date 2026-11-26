@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Allows plain ws:// (no encryption) ONLY to 10.0.2.2, which is the computer
+  running the emulator, so we can test against a local server.
+  Every other address still needs a secure connection.
+  Debug builds only (app/src/debug), so a release build can never allow ws://.
+  Remove this once the app uses wss:// (#151).
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

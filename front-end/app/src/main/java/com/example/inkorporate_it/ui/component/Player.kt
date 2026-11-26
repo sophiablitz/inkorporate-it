@@ -21,8 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.inkorporate_it.ui.frontendscreens.LobbyPlayer
+import com.example.inkorporate_it.ui.game.GamePlayer
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
+
 @Composable
 fun InkBlob(color: Color, modifier: Modifier = Modifier) {
     Box(
@@ -31,8 +32,9 @@ fun InkBlob(color: Color, modifier: Modifier = Modifier) {
             .background(color, CircleShape),
     )
 }
+
 @Composable
-fun PlayerEntry(player: LobbyPlayer, modifier: Modifier = Modifier) {
+fun PlayerEntry(player: GamePlayer, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -63,6 +65,7 @@ fun PlayerEntry(player: LobbyPlayer, modifier: Modifier = Modifier) {
         }
     }
 }
+
 @Composable
 fun Player(username: String, color: Color, modifier: Modifier = Modifier) {
     Column(
