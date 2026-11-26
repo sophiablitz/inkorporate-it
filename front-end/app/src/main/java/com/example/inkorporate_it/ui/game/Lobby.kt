@@ -1,24 +1,19 @@
-package com.example.inkorporate_it.ui.frontendscreens
+package com.example.inkorporate_it.ui.game
 
 import android.content.ClipData
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -26,7 +21,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -55,25 +49,15 @@ import com.example.inkorporate_it.ui.component.PlayerEntry
 import com.example.inkorporate_it.ui.theme.InkorporateitTheme
 import kotlinx.coroutines.launch
 
-/** A single player in the lobby. */
-data class LobbyPlayer(
-    val name: String,
-    val isHost: Boolean = false,
-)
-
 private const val MAX_PLAYERS = 8
 private const val MIN_PLAYERS_TO_START = 2
 
 @Composable
 fun LobbyScreen(
-    roomCode: String,
-    players: List<LobbyPlayer>,
-    isHost: Boolean,
+    state: GameUiState,
     modifier: Modifier = Modifier,
-    rounds: Int = 3,
     timeSeconds: Int = 80,
     wordList: String = "Provided",
-    onLeave: () -> Unit = {},
     onCopyCode: () -> Unit = {},
     onStart: () -> Unit = {},
 ) {
@@ -90,27 +74,6 @@ fun LobbyScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Top bar: Leave button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                LeaveButton(onClick = onLeave)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = "Lobby",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "Inkorporate.it",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF451FCF),
-                )
-            }
-
             // Room code card
             GameCard {
                 Text(
@@ -124,19 +87,20 @@ fun LobbyScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = roomCode,
+                        text = state.roomCode,
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Button(
                         onClick = {
-                            coroutineScope.launch{
-                                val clipData = ClipData.newPlainText("Room Code", roomCode)
+                            coroutineScope.launch {
+                                val clipData = ClipData.newPlainText("Room Code", state.roomCode)
                                 val clipEntry = ClipEntry(clipData)
                                 clipboard.setClipEntry(clipEntry)
                             }
                             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) { // Android 12L and older
-                                Toast.makeText(context, "Room code copied", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Room code copied", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                             onCopyCode()
                         },
@@ -157,11 +121,11 @@ fun LobbyScreen(
             // Players card
             GameCard {
                 Text(
-                    text = "Players (${players.size}/$MAX_PLAYERS)",
+                    text = "Players (${state.players.size}/$MAX_PLAYERS)",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                PlayerGrid(players = players.take(MAX_PLAYERS))
+                PlayerGrid(players = state.players.take(MAX_PLAYERS))
             }
 
             // Game settings card
@@ -171,7 +135,7 @@ fun LobbyScreen(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                SettingRow(label = "Rounds", value = rounds.toString())
+                SettingRow(label = "Rounds", value = state.round.toString())
                 SettingRow(label = "Time", value = "${timeSeconds}s")
                 SettingRow(label = "Word list", value = wordList)
             }
@@ -179,8 +143,8 @@ fun LobbyScreen(
             Spacer(Modifier.weight(1f))
 
             // Bottom action
-            if (isHost) {
-                val canStart = players.size >= MIN_PLAYERS_TO_START
+            if (state.isHost) {
+                val canStart = state.players.size >= MIN_PLAYERS_TO_START
                 Button(
                     onClick = onStart,
                     enabled = canStart,
@@ -328,7 +292,7 @@ private fun TimeSettingRow(
 
 /** Lays players out in rows of up to 4. */
 @Composable
-private fun PlayerGrid(players: List<LobbyPlayer>, modifier: Modifier = Modifier) {
+private fun PlayerGrid(players: List<GamePlayer>, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -358,32 +322,11 @@ private fun PlayerGrid(players: List<LobbyPlayer>, modifier: Modifier = Modifier
 @Preview(showBackground = true)
 @Composable
 fun LobbyScreenHostPreview() {
-    InkorporateitTheme {
-        LobbyScreen(
-            roomCode = "INK-4821",
-            players = listOf(
-                LobbyPlayer("Sophia", isHost = true),
-                LobbyPlayer("Jerry"),
-                LobbyPlayer("Alejandro"),
-                LobbyPlayer("Ismael"),
-                LobbyPlayer("Sam"),
-            ),
-            isHost = true,
-        )
-    }
+    InkorporateitTheme { LobbyScreen(previewGuesserState.copy(isHost = true)) }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun LobbyScreenGuestPreview() {
-    InkorporateitTheme {
-        LobbyScreen(
-            roomCode = "INK-4821",
-            players = listOf(
-                LobbyPlayer("Sophia", isHost = true),
-                LobbyPlayer("You"),
-            ),
-            isHost = false,
-        )
-    }
+    InkorporateitTheme { LobbyScreen(previewGuesserState.copy(isHost = false)) }
 }
