@@ -14,10 +14,13 @@ fun GuessingScreen(
 ) {
     GamePlaceholderScreen(
         title = "Guessing",
-        note = "Someone else is drawing. Not built yet.",
+        // STUB: what the server sent, so the flow can be checked before the screen is built.
+        note = "${state.drawerName} is drawing: ${state.wordHint} · ${state.secondsLeft} s left · " +
+            "${state.strokes.size} strokes so far. Not built yet.",
         modifier = modifier,
         options = listOf(
-            PlaceholderOption("End the round") { onStubPhase(GamePhase.RoundOver, false) },
+            // STUB: against StubServerSocket this brings the turn's timer to its last second.
+            PlaceholderOption("Skip to the end of the turn") { onStubPhase(GamePhase.RoundOver, false) },
         ),
     )
 }

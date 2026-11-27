@@ -14,12 +14,15 @@ fun EndOfRoundScreen(
 ) {
     GamePlaceholderScreen(
         title = "End of round",
-        note = "Scores for this round. Not built yet.",
+        // STUB: what the server sent, so the flow can be checked before the screen is built.
+        note = "The word was ${state.revealedWord}.\n" +
+            state.players.joinToString("\n") { "${it.name}: +${it.pointsThisTurn} (total ${it.score})" } +
+            "\nNext turn in ${state.secondsLeft} s",
         modifier = modifier,
         options = listOf(
-            PlaceholderOption("Next round: I'm drawing") { onStubPhase(GamePhase.Drawing, true) },
-            PlaceholderOption("Next round: I'm guessing") { onStubPhase(GamePhase.Drawing, false) },
-            PlaceholderOption("End the game") { onStubPhase(GamePhase.GameOver, false) },
+            // The server picks who draws next (join order), so the only real choice here is the
+            // host's Continue: next_turn, instead of waiting for the results to time out.
+            PlaceholderOption("Continue") { onContinueGame() },
         ),
     )
 }

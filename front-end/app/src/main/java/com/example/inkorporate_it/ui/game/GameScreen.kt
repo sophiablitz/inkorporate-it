@@ -98,6 +98,7 @@ fun GameScreen(
     GameScreen(
         state = state,
         onStartGame = viewModel::onStartGame,
+        onStartDrawing = viewModel::onStartDrawing,
         onSendMessage = viewModel::onSendMessage,
         onSendStroke = viewModel::onSendStroke,
         onClearCanvas = viewModel::onClearCanvas,
@@ -125,6 +126,7 @@ fun GameScreen(
     onStubPhase: (phase: GamePhase, isMyTurnToDraw: Boolean) -> Unit, // STUB: placeholder buttons
     modifier: Modifier = Modifier,
     currentPlayerName: String = "",  // this phone's name, so End of game can highlight its row
+    onStartDrawing: () -> Unit = {},  // the drawer's Start, while getting ready (#160)
 ) {
     Column {
         // End of game has its own title and uses the whole height, so it skips the top bar.
@@ -146,7 +148,9 @@ fun GameScreen(
                 modifier = modifier,
             )
 
-            GamePhase.Drawing -> if (state.isMyTurnToDraw) {
+            GamePhase.Drawing -> if (state.isGettingReady) {
+                GettingReadyScreen(state, onStartDrawing, modifier)
+            } else if (state.isMyTurnToDraw) {
                 DrawingScreen(state, onSendStroke, onClearCanvas, modifier, onStubPhase)
             } else {
                 GuessingScreen(state, onSendMessage, modifier, onStubPhase)

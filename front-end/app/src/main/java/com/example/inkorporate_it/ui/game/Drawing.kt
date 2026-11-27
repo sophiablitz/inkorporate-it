@@ -16,10 +16,12 @@ fun DrawingScreen(
 ) {
     GamePlaceholderScreen(
         title = "Drawing",
-        note = "Your turn to draw. Not built yet.",
+        // STUB: what the server sent, so the flow can be checked before the screen is built.
+        note = "Your word: ${state.wordHint} · ${state.secondsLeft} s left · ${state.strokes.size} strokes. Not built yet.",
         modifier = modifier,
         options = listOf(
-            PlaceholderOption("End the round") { onStubPhase(GamePhase.RoundOver, false) },
+            // STUB: against StubServerSocket this brings the turn's timer to its last second.
+            PlaceholderOption("Skip to the end of the turn") { onStubPhase(GamePhase.RoundOver, false) },
         ),
     )
 }

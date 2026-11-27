@@ -14,9 +14,9 @@ import com.example.inkorporate_it.model.Avatar
  * The fields are already worked out for the screen (isMyTurnToDraw, wordHint),
  * so composables never have to compare player ids or hide the word themselves.
  *
- * NOT FINAL: GamePlayer, Stroke and ChatMessage are UI-side placeholders.
- * The shared protocol models (shared/.../protocol/Models.kt) are still empty;
- * once they exist, GameViewModel converts them into these types.
+ * GamePlayer, Stroke and ChatMessage are the screen's versions of the shared protocol
+ * models (shared/.../protocol/Models.kt). GameViewModel converts between them
+ * (GameSession.toUiState() and onSendStroke), so composables never see the protocol.
  */
 data class GameUiState(
     val phase: GamePhase = GamePhase.Waiting,
@@ -24,7 +24,11 @@ data class GameUiState(
     val isHost: Boolean = false,        // true if this phone created the room
     val players: List<GamePlayer> = emptyList(),
     val isMyTurnToDraw: Boolean = false,
+    val isGettingReady: Boolean = false, // the drawer is looking at their word; the timer hasn't started (#160)
+    val secondsToStart: Int = 0,        // how long the drawer has to tap Start
+    val drawerName: String = "",
     val wordHint: String = "",          // "_ _ _ _ _" for guessers, the whole word for the drawer
+    val revealedWord: String? = null,   // the word, for everyone, once the turn is over
     val secondsLeft: Int = 0,
     val round: Int = 0,
     val totalRounds: Int = 0,
@@ -44,6 +48,7 @@ data class GamePlayer(
     val isHost: Boolean = false,
     val isDrawing: Boolean = false,
     val hasGuessed: Boolean = false,
+    val pointsThisTurn: Int = 0,        // for the end of turn screen
 )
 
 /** One continuous line on the canvas: the points a finger passed through. */
