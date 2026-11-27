@@ -36,8 +36,10 @@ import kotlinx.coroutines.launch
  * - start_game: everyone draws once per round, in join order. The word is always STUB_WORD.
  *   Your turn: your_word, then Start (or SECONDS_TO_START). A bot's turn: it starts after
  *   a second and draws a little house.
- * - Both bots guess right a few seconds into every turn they aren't drawing, so every
- *   turn has points to show. Typing STUB_WORD while guessing scores you too.
+ * - The bots chat like players: they say hi in the lobby, and in every turn they aren't
+ *   drawing they send a wrong guess or two (plain chat) before guessing right a few
+ *   seconds in, so every turn has chat and points to show. Typing STUB_WORD while
+ *   guessing scores you too.
  * - Points are fixed and easy to read: 150, 110, then 90 for the 1st, 2nd and 3rd guesser,
  *   and 60 to the drawer for each player who guessed.
  * - next_turn, return_to_lobby, leave_room, close_room: what the real server does.
@@ -101,11 +103,15 @@ class StubServerSocket(
     @Synchronized // the timers run on another thread
     private fun answer(message: ClientMessage) {
         when (message) {
-            is ClientMessage.CreateRoom ->
+            is ClientMessage.CreateRoom -> {
                 reply(ServerMessage.RoomJoined(ME, newRoom("123456", ME, Player(ME, message.name, message.avatar), BOT_PLAYER, GUESSER_PLAYER)))
+                greetInLobby()
+            }
 
-            is ClientMessage.JoinRoom ->
+            is ClientMessage.JoinRoom -> {
                 reply(ServerMessage.RoomJoined(ME, newRoom(message.code, BOT, BOT_PLAYER, Player(ME, message.name, message.avatar), GUESSER_PLAYER)))
+                greetInLobby()
+            }
 
             ClientMessage.StartGame -> room?.let {
                 room = it.copy(round = 1)
@@ -167,9 +173,26 @@ class StubServerSocket(
                 if (botDraws && stroke != null) reply(ServerMessage.Stroke(stroke))
             },
         ) { endTurn() }
-        // Each bot that isn't drawing guesses right a little later than the last.
+        // Each bot that isn't drawing sends a wrong guess or two, then guesses right a
+        // little later than the bot before it.
         current.players.filter { it.playerId != ME && it.playerId != current.drawerId }
-            .forEachIndexed { i, bot -> after(BOT_GUESS_SECONDS + i * 2) { correctGuess(bot.playerId) } }
+            .forEachIndexed { i, bot ->
+                WRONG_GUESSES[i % WRONG_GUESSES.size].forEachIndexed { n, guess ->
+                    after(1 + i + n * 2) { botSays(bot.playerId, guess, onlyIn = RoomPhase.DRAWING) }
+                }
+                after(BOT_GUESS_SECONDS + i * 2) { correctGuess(bot.playerId) }
+            }
+    }
+
+    /** The bots say hi in the lobby, a second apart. */
+    private fun greetInLobby() {
+        after(1) { botSays(BOT, "hi!", onlyIn = RoomPhase.LOBBY) }
+        after(2) { botSays(GUESSER_PLAYER.playerId, "ready when you are", onlyIn = RoomPhase.LOBBY) }
+    }
+
+    /** A bot's chat message, as the server would relay it, if the room is still in [onlyIn]. */
+    private fun botSays(botId: String, text: String, onlyIn: RoomPhase) {
+        if (room?.phase == onlyIn) reply(ServerMessage.Chat(botId, text))
     }
 
     private fun chat(text: String) {
@@ -287,6 +310,9 @@ class StubServerSocket(
         const val RESULTS_SECONDS = 6
         private const val BOT_SECONDS_TO_START = 2
         private const val BOT_GUESS_SECONDS = 3
+
+        /** Each bot's wrong guesses, sent as plain chat before it gets the word. */
+        private val WRONG_GUESSES = listOf(listOf("house?"), listOf("a box", "garage?"))
 
         /** Points for the 1st, 2nd and 3rd guesser, and the drawer's points per player who guessed. */
         val GUESS_POINTS = listOf(150, 110, 90)

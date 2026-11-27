@@ -74,9 +74,31 @@ class StubServerSocketTest {
 
         val session = client.state.value
         assertEquals(StubServerSocket.STUB_WORD, session.revealedWord)
-        assertEquals("box?", session.chat.first().text)
+        assertTrue(session.chat.any { it.text == "box?" }) // your wrong guess, among the bots' chat
         assertTrue(session.chat.none { it.playerId != null && it.text.equals("barn", ignoreCase = true) })
         assertTrue(you.score > 0)
+    }
+
+    @Test
+    fun theBotsSayHiInTheLobby() = runBlocking {
+        client.createRoom("Jorge", Avatar())
+        withTimeout(1_000) { while (client.state.value.chat.size < 2) delay(2) }
+        assertEquals(listOf("bot", "guesser"), client.state.value.chat.map { it.playerId })
+    }
+
+    @Test
+    fun onYourTurnTheBotsGuessWrongInChatBeforeGettingIt() = runBlocking {
+        client.createRoom("Jorge", Avatar())
+        client.startGame()
+        client.startDrawing()
+        awaitPhase(RoomPhase.TURN_OVER)
+
+        val chat = client.state.value.chat
+        val wrong = chat.filter { it.playerId != null }.map { it.text }
+        assertEquals(listOf("house?", "a box", "garage?"), wrong)
+        assertTrue(wrong.none { it.contains(StubServerSocket.STUB_WORD, ignoreCase = true) })
+        // Then each right guess shows up as a note, never as the word.
+        assertEquals(2, chat.count { it.playerId == null && it.text.endsWith("guessed it!") })
     }
 
     @Test
