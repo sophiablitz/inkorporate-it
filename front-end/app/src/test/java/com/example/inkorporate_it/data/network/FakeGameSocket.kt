@@ -1,25 +1,27 @@
 package com.example.inkorporate_it.data.network
 
+import it.inkorporate.protocol.ClientMessage
+import it.inkorporate.protocol.ServerMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * A [GameSocket] for tests: no network at all. Everything above it (GameClient's
- * menu and its JSON) is the real code.
+ * A [GameSocket] for tests: no network and no JSON. Everything above it (GameClient
+ * and the ViewModels) is the real code.
  *
  * The test plays the server: [serverSends] pretends a message arrived, and [sent]
- * lists every text the app sent.
+ * lists every message the app sent.
  */
 class FakeGameSocket : GameSocket {
 
     override val status = MutableStateFlow(ConnectionStatus.Disconnected)
 
-    private val fromServer = MutableSharedFlow<String>(extraBufferCapacity = 16)
-    override val incoming: Flow<String> = fromServer
+    private val fromServer = MutableSharedFlow<ServerMessage>(extraBufferCapacity = 16)
+    override val incoming: Flow<ServerMessage> = fromServer
 
-    /** Every text the app sent, in order. */
-    val sent = mutableListOf<String>()
+    /** Every message the app sent, in order. */
+    val sent = mutableListOf<ClientMessage>()
 
     var connectCalls = 0
         private set
@@ -29,9 +31,9 @@ class FakeGameSocket : GameSocket {
         status.value = ConnectionStatus.Connected
     }
 
-    override suspend fun send(text: String): Boolean {
+    override suspend fun send(message: ClientMessage): Boolean {
         if (status.value != ConnectionStatus.Connected) return false
-        sent += text
+        sent += message
         return true
     }
 
@@ -39,6 +41,6 @@ class FakeGameSocket : GameSocket {
         status.value = ConnectionStatus.Disconnected
     }
 
-    /** Pretends the server sent [text]. */
-    suspend fun serverSends(text: String) = fromServer.emit(text)
+    /** Pretends the server sent [message]. */
+    suspend fun serverSends(message: ServerMessage) = fromServer.emit(message)
 }
