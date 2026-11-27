@@ -25,7 +25,7 @@ import kotlinx.serialization.json.Json
  *  1. room_update (phase getting_ready, drawerId set) to everyone,
  *     and your_word to the drawer only.
  *  2. The drawer sends start_drawing, or SECONDS_TO_START pass.
- *  3. turn_start to everyone. time_left about once a second.
+ *  3. turn_start to everyone. time_left once a second (it also counts down steps 1 and 7).
  *  4. The drawer sends stroke / undo / clear_canvas, relayed to everyone else.
  *  5. Guessers send chat: wrong guesses come back as chat, right ones as correct_guess.
  *  6. Time runs out, everyone guessed, or the drawer left: turn_end to everyone.
@@ -145,7 +145,11 @@ sealed class ServerMessage {
     @Serializable @SerialName("turn_start")
     data class TurnStart(val room: Room, val wordLength: Int, val turnSeconds: Int) : ServerMessage()
 
-    /** To everyone, about once a second while drawing. */
+    /**
+     * To everyone, once a second while anything is counting down: the drawer looking at
+     * their word, the drawing, and the turn's results. So every screen can show how long
+     * is left in the step it's on. Each step starts with its full time.
+     */
     @Serializable @SerialName("time_left")
     data class TimeLeft(val seconds: Int) : ServerMessage()
 
